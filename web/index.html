@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Academic Tree</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
+</head>
+<body>
+  <header id="toolbar">
+    <h1>Academic Tree</h1>
+    <div class="search">
+      <input id="search" list="names" placeholder="Find a person…" autocomplete="off">
+      <datalist id="names"></datalist>
+    </div>
+    <label class="toggle" title="Which people to lay out">
+      <span>View</span>
+      <select id="view">
+        <option value="all">Everything</option>
+        <option value="lineage">My ancestors only</option>
+      </select>
+    </label>
+    <label class="toggle" title="How kinship labels are computed">
+      <span>Relation via</span>
+      <select id="relmode">
+        <option value="relation">all advising links</option>
+        <option value="relation_phd">PhD lineage first</option>
+      </select>
+    </label>
+    <button id="fit" type="button">Fit</button>
+    <button id="home" type="button">Me</button>
+    <span id="stats"></span>
+  </header>
+
+  <aside id="legend">
+    <div class="lg-title">Advising</div>
+    <div class="lg-row"><svg width="44" height="10"><line x1="2" y1="5" x2="42" y2="5" class="edge phd"/></svg>PhD</div>
+    <div class="lg-row"><svg width="44" height="10"><line x1="2" y1="5" x2="42" y2="5" class="edge undergrad"/></svg>Undergraduate</div>
+    <div class="lg-row"><svg width="44" height="10"><line x1="2" y1="5" x2="42" y2="5" class="edge postdoc"/></svg>Postdoc</div>
+    <div class="lg-row"><svg width="44" height="10"><line x1="2" y1="5" x2="42" y2="5" class="edge research"/></svg>Research / other</div>
+    <div class="lg-title">Awards</div>
+    <div class="lg-row"><img src="img/awards/nobel.svg" alt="">Nobel</div>
+    <div class="lg-row"><img src="img/awards/fields.svg" alt="">Fields</div>
+    <div class="lg-row"><img src="img/awards/turing.svg" alt="">Turing</div>
+    <div class="lg-row"><img src="img/awards/wolf.svg" alt="">Wolf</div>
+    <div class="lg-row"><img src="img/awards/qb.svg" alt="">Quizbowl canon</div>
+    <div class="lg-title">Field ring</div>
+    <div class="lg-row fields">
+      <span class="dot" style="--c:var(--f-physics)"></span>Phys
+      <span class="dot" style="--c:var(--f-chemistry)"></span>Chem
+      <span class="dot" style="--c:var(--f-medicine)"></span>Med
+      <span class="dot" style="--c:var(--f-mathematics)"></span>Math
+    </div>
+  </aside>
+
+  <main id="stage">
+    <svg id="canvas"><g id="viewport"><g id="edges"></g><g id="nodes"></g></g></svg>
+    <div id="loading">Laying out the tree…</div>
+  </main>
+
+  <div id="card" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>

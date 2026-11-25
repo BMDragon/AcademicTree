@@ -1,0 +1,96 @@
+{
+  "me": {
+    "name": "Me",
+    "advisors": [
+      {
+        "name": "Mark Ross-Lonergan",
+        "type": "phd",
+        "wikidata": "Q130570817",
+        "inspire": "1292387",
+        "institution": "Columbia University"
+      },
+      {
+        "name": "Kate Scholberg",
+        "type": "undergrad",
+        "wikidata": "Q96675792",
+        "institution": "Duke University"
+      },
+      {
+        "name": "Steffen A. Bass",
+        "type": "undergrad",
+        "wikidata": "Q58814156",
+        "inspire": "1017182",
+        "mgp": "287234",
+        "institution": "Duke University"
+      }
+    ]
+  },
+  "max_generations": 40,
+  "student_of_min_birth_year": 1400,
+  "prizes": {
+    "Q38104": {
+      "key": "nobel",
+      "field": "Physics",
+      "label": "Nobel Prize in Physics"
+    },
+    "Q44585": {
+      "key": "nobel",
+      "field": "Chemistry",
+      "label": "Nobel Prize in Chemistry"
+    },
+    "Q80061": {
+      "key": "nobel",
+      "field": "Medicine",
+      "label": "Nobel Prize in Physiology or Medicine"
+    },
+    "Q28835": {
+      "key": "fields",
+      "field": "Mathematics",
+      "label": "Fields Medal"
+    },
+    "Q185667": {
+      "key": "turing",
+      "field": "Computing",
+      "label": "Turing Award"
+    },
+    "Q845333": {
+      "key": "wolf",
+      "field": "Physics",
+      "label": "Wolf Prize in Physics"
+    },
+    "Q968876": {
+      "key": "wolf",
+      "field": "Chemistry",
+      "label": "Wolf Prize in Chemistry"
+    },
+    "Q540561": {
+      "key": "wolf",
+      "field": "Medicine",
+      "label": "Wolf Prize in Medicine"
+    },
+    "Q915604": {
+      "key": "wolf",
+      "field": "Mathematics",
+      "label": "Wolf Prize in Mathematics"
+    }
+  },
+  "quizbowl": {
+    "category": "Science",
+    "min_count": 5,
+    "frequency_limit": 20000
+  },
+  "sources": {
+    "wikidata": true,
+    "inspire": true,
+    "mgp": true,
+    "academictree_saved": true
+  },
+  "rate_limit_seconds": {
+    "query.wikidata.org": 1.0,
+    "www.wikidata.org": 0.2,
+    "www.mathgenealogy.org": 0.5,
+    "inspirehep.net": 0.4,
+    "en.wikipedia.org": 3.0,
+    "www.qbreader.org": 0.5
+  }
+}

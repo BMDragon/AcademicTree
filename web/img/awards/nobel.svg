@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <path d="M10 1h5l1 9-3 1zM22 1h-5l-1 9 3 1z" fill="#2563eb"/>
+  <path d="M12.6 1h1.6l1 9h-1.6zM17.8 1h1.6l-1 9h-1.6z" fill="#facc15"/>
+  <circle cx="16" cy="20" r="10.5" fill="#d4a017" stroke="#8a6508" stroke-width="1.2"/>
+  <circle cx="16" cy="20" r="7.6" fill="#f2c94c" stroke="#b7860b" stroke-width="0.8"/>
+  <path d="M12 25c-2-2-2.6-5.4-1-8M20 25c2-2 2.6-5.4 1-8" fill="none" stroke="#8a6508" stroke-width="0.9"/>
+  <path d="M10.9 19.5l1.1-.6M10.8 21.5l1.2-.3M11.5 23.4l1.1-.1M21.1 19.5l-1.1-.6M21.2 21.5l-1.2-.3M20.5 23.4l-1.1-.1" stroke="#8a6508" stroke-width="0.8"/>
+  <text x="16" y="23" text-anchor="middle" font-family="Georgia,serif" font-size="8.5" font-weight="bold" fill="#6b4c05">N</text>
+</svg>

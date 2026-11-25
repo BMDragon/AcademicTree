@@ -1,0 +1,10 @@
+# Ancestors with no known advisor (modern era). Save their academictree page into
+# data/academictree_saved/ and rerun `python3 -m crawler.build`.
+R.F. Bentley                        14× great-grandparent        (search academictree.org for this name)
+Serguey T. Petcov                   great-grandparent            (search academictree.org for this name)
+Charles W. Peck                     grandparent                  (search academictree.org for this name)
+Joachim A. Maruhn                   great-grandparent            (search academictree.org for this name)
+König Wilhelm-Gymnasium zu Breslau  4× great-grandparent         (search academictree.org for this name)
+Veit Werler                         20× great-grandparent        (search academictree.org for this name)
+Valentin Wolgemut                   20× great-grandparent        (search academictree.org for this name)
+Theodorus Aemilius                  16× great-grandparent        (search academictree.org for this name)

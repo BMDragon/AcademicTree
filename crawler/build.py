@@ -1,0 +1,560 @@
+"""Build web/data/graph.json.
+
+    python3 -m crawler.build            # full build (cached HTTP; reruns are fast)
+    python3 -m crawler.build --no-qb    # skip quizbowl lookup
+
+Pipeline: seeds + notable people -> crawl advisors upward across Wikidata,
+INSPIRE-HEP, Math Genealogy and saved academictree pages -> merge identities
+(union-find over source IDs) -> keep my ancestors plus every path from one of
+them down to a notable person -> enrich -> kinship -> JSON.
+"""
+import argparse
+import json
+import os
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+from . import academictree_html, http, inspire, kinship, mgp, names, notables, wikidata, wikipedia
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TYPE_RANK = {"phd": 0, "postdoc": 1, "undergrad": 2, "research": 3}
+SRC_RANK = {"wd": 0, "insp": 1, "mgp": 2, "at": 3, "nm": 4, "bai": 5, "me": -1}
+
+
+def log(*a):
+    print(time.strftime("[%H:%M:%S]"), *a, flush=True)
+
+
+class UF:
+    def __init__(self):
+        self.p = {}
+
+    def find(self, x):
+        self.p.setdefault(x, x)
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]
+            x = self.p[x]
+        return x
+
+    def union(self, a, b):
+        ra, rb = self.find(a), self.find(b)
+        if ra != rb:
+            # deterministic representative: best source kind, then smallest id
+            if (SRC_RANK[rb.split(":")[0]], rb) < (SRC_RANK[ra.split(":")[0]], ra):
+                ra, rb = rb, ra
+            self.p[rb] = ra
+        return ra
+
+
+class Crawler:
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.uf = UF()
+        self.info = {}      # ref -> dict(name=..., plus source specific fields)
+        self.adv = {}       # ref -> {advisor_ref: type}
+        self.depth = {}     # ref -> generations above the nearest root
+        self.expanded = set()
+        self.pending = set()
+        self.saved_at = {}
+        self.bai_done = {}
+        self.orcid_done = {}
+
+    # ----- bookkeeping -------------------------------------------------
+    def add(self, ref, depth):
+        if ref not in self.depth or depth < self.depth[ref]:
+            self.depth[ref] = depth
+        self.uf.find(ref)
+        if ref not in self.expanded:
+            self.pending.add(ref)
+
+    def same(self, a, b):
+        d = min(self.depth.get(a, 99), self.depth.get(b, 99))
+        self.add(a, d)
+        self.add(b, d)
+        self.uf.union(a, b)
+
+    def add_adv(self, child, parent, typ):
+        cur = self.adv.setdefault(child, {})
+        if parent not in cur or TYPE_RANK[typ] < TYPE_RANK[cur[parent]]:
+            cur[parent] = typ
+        self.add(parent, self.depth.get(child, 0) + 1)
+
+    # ----- expansion per source ---------------------------------------
+    def expand_wd(self, refs):
+        qids = [r[3:] for r in refs]
+        data = wikidata.links(qids)
+        for q, d in data.items():
+            r = "wd:" + q
+            self.info.setdefault(r, {})["name"] = d["label"]
+            if not d["human"]:
+                continue
+            cutoff = self.cfg.get("student_of_min_birth_year", 1400)
+            by = d.get("birth_year")
+            for a, typ in d["advisors"].items():
+                # Wikidata "student of" (P1066/P802) is loose; before ~1400 it
+                # mostly encodes chains of religious transmission, not advising.
+                if typ == "research" and (by is None or by < cutoff):
+                    continue
+                self.add_adv(r, "wd:" + a, typ)
+            if self.cfg["sources"]["mgp"]:
+                for m in d["mgp"]:
+                    self.same(r, "mgp:" + m)
+            for at in d["at"]:
+                self.same(r, "at:" + at)
+            if self.cfg["sources"]["inspire"]:
+                # "bai:" refs are resolved by INSPIRE id search, which also
+                # accepts ORCIDs; use ORCID when Wikidata lacks the INSPIRE BAI.
+                for b in d["bai"] or d["orcid"]:
+                    self.same(r, "bai:" + b)
+
+    def expand_bai(self, ref):
+        rec = inspire.by_bai(ref[4:])
+        return ref, rec
+
+    def expand_insp(self, ref):
+        rec = inspire.fetch(ref[5:])
+        if not rec:
+            return ref, None, []
+        advs = inspire.resolve_advisors(rec["advisors"]) if rec["advisors"] else []
+        return ref, rec, list(zip(rec["advisors"], advs))
+
+    def expand_mgp(self, ref):
+        return ref, mgp.fetch(ref[4:])
+
+    def run(self):
+        maxd = self.cfg["max_generations"]
+        rnd = 0
+        pool = ThreadPoolExecutor(max_workers=8)
+        while self.pending:
+            rnd += 1
+            batch = {r for r in self.pending if self.depth.get(r, 0) <= maxd} - self.expanded
+            self.pending.clear()
+            if not batch:
+                break
+            self.expanded |= batch
+            kinds = {}
+            for r in batch:
+                kinds.setdefault(r.split(":", 1)[0], []).append(r)
+            log("round %d: %s  (http %s)" % (rnd, {k: len(v) for k, v in sorted(kinds.items())}, http.stats))
+            new_mgp, new_bai, new_orcid, new_at = set(), set(), set(), set()
+            new_wiki = {}
+
+            if kinds.get("wd"):
+                self.expand_wd(kinds["wd"])
+
+            for ref, rec in pool.map(self.expand_bai, kinds.get("bai", [])):
+                if rec:
+                    self.same(ref, "insp:" + rec["recid"])
+
+            for ref, rec, advs in pool.map(self.expand_insp, kinds.get("insp", [])):
+                if not rec:
+                    continue
+                self.info.setdefault(ref, {}).update(name=rec["name"], positions=rec["positions"])
+                if rec["bai"]:
+                    new_bai.add(rec["bai"])
+                    self.bai_done[rec["bai"]] = ref
+                if rec.get("wikipedia"):
+                    new_wiki[rec["wikipedia"].replace("_", " ")] = ref
+                if rec["orcid"]:
+                    new_orcid.add(rec["orcid"])
+                    self.orcid_done[rec["orcid"]] = ref
+                for entry, arec in advs:
+                    if arec:
+                        aref = "insp:" + arec["recid"]
+                    else:
+                        aref = "nm:%s|%s" % (entry["name"], ref)
+                        nm = entry["name"]
+                        if "," in nm:
+                            last, first = nm.split(",", 1)
+                            nm = first.strip() + " " + last.strip()
+                        self.info[aref] = {"name": nm}
+                        self.expanded.add(aref)
+                    self.add_adv(ref, aref, entry["type"])
+
+            for ref, rec in pool.map(self.expand_mgp, kinds.get("mgp", [])):
+                if not rec:
+                    continue
+                self.info.setdefault(ref, {}).update(name=rec["name"], degrees=rec["degrees"],
+                                                     thesis=rec["thesis"])
+                new_mgp.add(ref[4:])
+                for a in rec["advisors"]:
+                    self.add_adv(ref, "mgp:" + a, "phd")
+
+            for ref in kinds.get("at", []):
+                new_at.add(ref[3:])
+                page = self.saved_at.get(ref[3:])
+                if page:
+                    self.info.setdefault(ref, {})["name"] = page["name"]
+                    for p in page["parents"]:
+                        self.info.setdefault("at:" + p["pid"], {}).setdefault("name", p["name"])
+                        self.add_adv(ref, "at:" + p["pid"], p["type"])
+
+            # crosswalk: external ids -> Wikidata
+            for prop, vals, pre in (("P549", new_mgp, "mgp:"), ("P2381", new_at, "at:")):
+                if vals:
+                    for v, q in wikidata.lookup_by(prop, vals).items():
+                        self.same(pre + v, "wd:" + q)
+            if new_bai:
+                for v, q in wikidata.lookup_by("P2930", new_bai).items():
+                    self.same(self.bai_done[v], "wd:" + q)
+            if new_wiki:
+                for t, q in wikidata.lookup_by_enwiki(list(new_wiki)).items():
+                    self.same(new_wiki[t], "wd:" + q)
+            if new_orcid:
+                for v, q in wikidata.lookup_by("P496", new_orcid).items():
+                    self.same(self.orcid_done[v], "wd:" + q)
+        pool.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# Graph assembly
+# ---------------------------------------------------------------------------
+def best_name(refs, info):
+    for kind in ("wd", "insp", "mgp", "at", "nm"):
+        for r in sorted(refs):
+            if r.startswith(kind + ":"):
+                n = (info.get(r) or {}).get("name")
+                if n and not (kind == "wd" and n == r[3:]):
+                    return n
+    return sorted(refs)[0]
+
+
+def assemble(cr, me_edges):
+    """Return (groups, parents) where parents[child] = {parent: (type, set(sources))}."""
+    uf = cr.uf
+    # merge co-advisors of the same student that are clearly one person
+    changed = True
+    while changed:
+        changed = False
+        by_child = {}
+        for c, advs in cr.adv.items():
+            for a in advs:
+                by_child.setdefault(uf.find(c), set()).add(uf.find(a))
+        groups = {}
+        for r in uf.p:
+            groups.setdefault(uf.find(r), set()).add(r)
+        for c, advs in by_child.items():
+            advs = sorted(advs)
+            for i, a in enumerate(advs):
+                for b in advs[i + 1:]:
+                    if uf.find(a) == uf.find(b):
+                        continue
+                    if names.same_person(best_name(groups[a], cr.info), best_name(groups[b], cr.info)):
+                        # never merge two distinct Wikidata items
+                        wa = {x for x in groups[a] if x.startswith("wd:")}
+                        wb = {x for x in groups[b] if x.startswith("wd:")}
+                        # Two Wikidata items are only merged when full names
+                        # match exactly (Wikidata has duplicate items).
+                        if wa and wb and names.tokens(best_name(groups[a], cr.info)) != \
+                                names.tokens(best_name(groups[b], cr.info)):
+                            continue
+                        uf.union(a, b)
+                        changed = True
+    groups = {}
+    for r in uf.p:
+        if r.startswith("bai:"):
+            continue
+        groups.setdefault(uf.find(r), set()).add(r)
+    parents = {}
+    for c, advs in cr.adv.items():
+        gc = uf.find(c)
+        for a, typ in advs.items():
+            ga = uf.find(a)
+            if ga == gc:
+                continue
+            cur = parents.setdefault(gc, {}).get(ga)
+            src = c.split(":")[0]
+            if cur is None:
+                parents[gc][ga] = [typ, {src}]
+            else:
+                if TYPE_RANK[typ] < TYPE_RANK[cur[0]]:
+                    cur[0] = typ
+                cur[1].add(src)
+    parents["me"] = {uf.find(ref): [typ, {"config"}] for ref, typ in me_edges}
+    groups["me"] = {"me"}
+    return groups, parents
+
+
+def break_cycles(parents):
+    """Drop back edges so the advising graph is a DAG."""
+    color, dropped = {}, []
+    sys.setrecursionlimit(100000)
+
+    def dfs(x):
+        color[x] = 1
+        for p in list(parents.get(x, {})):
+            c = color.get(p, 0)
+            if c == 1:
+                dropped.append((x, p))
+                del parents[x][p]
+            elif c == 0:
+                dfs(p)
+        color[x] = 2
+
+    for x in list(parents):
+        if color.get(x, 0) == 0:
+            dfs(x)
+    return dropped
+
+
+def ancestors(x, parents):
+    seen, stack = set(), [x]
+    while stack:
+        y = stack.pop()
+        for p in parents.get(y, ()):
+            if p not in seen:
+                seen.add(p)
+                stack.append(p)
+    return seen
+
+
+def select(parents, notable_groups):
+    anc = ancestors("me", parents)
+    base = anc | {"me"}
+    connected = {}
+
+    def conn(x):
+        """Is x in my ancestry, or descended from someone who is?"""
+        if x not in connected:
+            connected[x] = False  # graph is a DAG; placeholder guards bad data
+            connected[x] = x in base or any(conn(p) for p in parents.get(x, ()))
+        return connected[x]
+
+    keep = set(base)
+    for n in notable_groups:
+        if n in base or not conn(n):
+            continue
+        # walk up from the notable through connected nodes only
+        stack = [n]
+        while stack:
+            y = stack.pop()
+            if y in keep:
+                continue
+            keep.add(y)
+            stack.extend(p for p in parents.get(y, ()) if conn(p) and p not in base)
+    return anc, keep
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-qb", action="store_true")
+    ap.add_argument("--no-enrich", action="store_true")
+    args = ap.parse_args()
+    cfg = json.load(open(os.path.join(ROOT, "config.json")))
+    http.set_rate_limits(cfg["rate_limit_seconds"])
+    cr = Crawler(cfg)
+
+    # saved academictree pages
+    saved_dir = os.path.join(ROOT, "data", "academictree_saved")
+    if cfg["sources"]["academictree_saved"]:
+        for page in academictree_html.load_all(saved_dir):
+            cr.saved_at[page["pid"]] = page
+            for ch in page["children"]:
+                cr.info.setdefault("at:" + ch["pid"], {}).setdefault("name", ch["name"])
+                cr.adv.setdefault("at:" + ch["pid"], {})["at:" + page["pid"]] = ch["type"]
+        log("saved academictree pages: %d" % len(cr.saved_at))
+
+    me_edges = []
+    for s in cfg["me"]["advisors"]:
+        refs = []
+        if s.get("wikidata"):
+            refs.append("wd:" + s["wikidata"])
+        if s.get("inspire"):
+            refs.append("insp:" + s["inspire"])
+        if s.get("mgp"):
+            refs.append("mgp:" + s["mgp"])
+        if s.get("academictree"):
+            refs.append("at:" + s["academictree"])
+        for r in refs:
+            cr.add(r, 1)
+            cr.uf.union(refs[0], r)
+        cr.info.setdefault(refs[0], {})["name"] = s["name"]
+        me_edges.append((refs[0], s["type"]))
+    # saved academictree pages for people already referenced by pid
+    for pid in cr.saved_at:
+        cr.add("at:" + pid, 1)
+
+    log("notables: prize laureates")
+    prizes = notables.prizes(cfg["prizes"])
+    log("  %d laureates" % len(prizes))
+    qb = {}
+    if not args.no_qb:
+        log("notables: quizbowl (QB Reader, %s)" % cfg["quizbowl"]["category"])
+        qb = notables.quizbowl(cfg["quizbowl"], log=log)
+        log("  %d quizbowl-canonical scientists" % len(qb))
+    for q in set(prizes) | set(qb):
+        cr.add("wd:" + q, 0)
+
+    log("crawling advisor lineages")
+    cr.run()
+
+    groups, parents = assemble(cr, me_edges)
+    dropped = break_cycles(parents)
+    if dropped:
+        log("dropped %d cycle edges" % len(dropped))
+    find = cr.uf.find
+    notable_groups = {find("wd:" + q) for q in set(prizes) | set(qb)}
+    anc, keep = select(parents, notable_groups)
+    log("ancestors: %d   kept nodes: %d" % (len(anc), len(keep)))
+
+    sub = {c: {p: v for p, v in ps.items() if p in keep} for c, ps in parents.items() if c in keep}
+    par_all = {c: list(ps) for c, ps in sub.items()}
+    par_phd = {c: [p for p, v in ps.items() if v[0] == "phd"] for c, ps in sub.items()}
+    nodes = sorted(keep - {"me"})
+    rel_all = kinship.relations("me", nodes, par_all)
+    rel_phd = kinship.relations_phd_primary("me", nodes, par_all, par_phd)
+
+    # ---- node records -------------------------------------------------
+    recs = {}
+    for g in keep:
+        refs = groups.get(g, {g})
+        r = {"id": g, "name": best_name(refs, cr.info) if g != "me" else cfg["me"]["name"]}
+        for ref in refs:
+            if ":" not in ref:
+                continue
+            kind, val = ref.split(":", 1)
+            if kind == "wd":
+                r.setdefault("qid", val)
+            elif kind == "insp":
+                r.setdefault("inspire", val)
+                inf = cr.info.get(ref, {})
+                if inf.get("positions"):
+                    r.setdefault("positions", inf["positions"])
+            elif kind == "mgp":
+                r.setdefault("mgp", val)
+                inf = cr.info.get(ref, {})
+                if inf.get("degrees"):
+                    r.setdefault("degrees", inf["degrees"])
+                    r.setdefault("thesis", inf.get("thesis"))
+            elif kind == "at":
+                r.setdefault("academictree", val)
+        q = r.get("qid")
+        r["prizes"] = []
+        for pz in prizes.get(q, []) if q else []:
+            pc = cfg["prizes"][pz["prize"]]
+            r["prizes"].append({"key": pc["key"], "field": pc["field"], "label": pc["label"],
+                                "year": pz["year"]})
+        r["prizes"].sort(key=lambda x: (x["year"] or 9999))
+        if q and q in qb:
+            r["qb"] = qb[q]
+        r["ancestor"] = g in anc
+        r["notable"] = g in notable_groups
+        r["relation"] = rel_all.get(g)
+        r["relation_phd"] = rel_phd.get(g)
+        recs[g] = r
+
+    # human-readable "via" names
+    for r in recs.values():
+        for k in ("relation", "relation_phd"):
+            rel = r.get(k)
+            if rel:
+                rel["via_name"] = recs[rel["via"]]["name"] if rel["via"] in recs else None
+                for alt in rel.get("alternates", []):
+                    alt["via_name"] = recs[alt["via"]]["name"] if alt["via"] in recs else None
+
+    if not args.no_enrich:
+        enrich(recs, cfg)
+
+    edges = []
+    for c, ps in sub.items():
+        for p, (typ, srcs) in ps.items():
+            edges.append({"source": p, "target": c, "type": typ, "sources": sorted(srcs)})
+
+    report_missing(recs, sub, anc)
+    out = {"generated": time.strftime("%Y-%m-%d %H:%M"), "me": "me",
+           "nodes": sorted(recs.values(), key=lambda r: r["id"]), "edges": edges,
+           "stats": {"nodes": len(recs), "edges": len(edges), "ancestors": len(anc),
+                     "laureates": {k: sum(1 for r in recs.values() if any(p["key"] == k for p in r["prizes"]))
+                                   for k in ("nobel", "fields", "turing", "wolf")},
+                     "quizbowl": sum(1 for r in recs.values() if r.get("qb"))}}
+    sanity(out)
+    path = os.path.join(ROOT, "web", "data", "graph.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+    log("wrote %s  %s" % (os.path.relpath(path, ROOT), json.dumps(out["stats"])))
+    log("http %s" % http.stats)
+
+
+def enrich(recs, cfg):
+    qids = [r["qid"] for r in recs.values() if r.get("qid")]
+    log("enriching %d Wikidata people" % len(qids))
+    wd = wikidata.enrich(qids)
+    byq = {r["qid"]: r for r in recs.values() if r.get("qid")}
+    for q, d in wd.items():
+        r = byq[q]
+        for k in ("description", "birth", "death", "birthplace", "citizenship", "image", "wikipedia",
+                  "employers", "fields", "educated"):
+            if d.get(k):
+                r[k] = d[k]
+        r["known_for"] = d["known_for"]
+        na = sorted(d["named_after"], key=lambda x: (not x["wiki"], x["label"] or ""))
+        r["named_after_total"] = len(na)
+        r["named_after"] = na[:40]
+        tracked = {p["label"] for p in r["prizes"]}
+        others, seen = [], set()
+        for a in sorted(d["awards"], key=lambda a: a["year"] or 9999):
+            if a["label"] in tracked or a["label"] in seen:
+                continue
+            seen.add(a["label"])
+            others.append(a)
+        r["other_awards"] = others[:25]
+        r["other_awards_total"] = len(others)
+
+    todo = [r for r in recs.values() if r.get("wikipedia")]
+    titles = {r["id"]: wikipedia.title_from_url(r["wikipedia"]) for r in todo}
+    tl = sorted(set(titles.values()))  # stable batches -> cache hits across runs
+    log("fetching Wikipedia data for %d articles (batched)" % len(tl))
+    ex = wikipedia.extracts(tl)
+    th = wikipedia.thumbnails(tl)
+    kf = wikipedia.known_for(tl)
+    for r in todo:
+        t = titles[r["id"]]
+        if ex.get(t):
+            r["extract"] = ex[t]
+        if th.get(t):
+            r["thumbnail"] = th[t]
+        have = {k["label"].lower() for k in r.get("known_for", []) if k.get("label")}
+        for k in kf.get(t, []):
+            if k["label"].lower() not in have:
+                r.setdefault("known_for", []).append(k)
+
+
+def report_missing(recs, sub, anc):
+    lines = []
+    for g in sorted(anc):
+        r = recs[g]
+        if sub.get(g):
+            continue
+        born = (r.get("birth") or "")[:4]
+        if born and born.isdigit() and int(born) < 1900:
+            continue
+        if r.get("degrees") and any((d.get("year") or 0) < 1920 for d in r["degrees"]):
+            continue
+        rel = (r.get("relation") or {}).get("label", "")
+        at = ("https://academictree.org/physics/peopleinfo.php?pid=" + r["academictree"]) \
+            if r.get("academictree") else "(search academictree.org for this name)"
+        lines.append("%-35s %-28s %s" % (r["name"], rel, at))
+    path = os.path.join(ROOT, "data", "missing_links.txt")
+    with open(path, "w") as f:
+        f.write("# Ancestors with no known advisor (modern era). Save their academictree page into\n"
+                "# data/academictree_saved/ and rerun `python3 -m crawler.build`.\n")
+        f.write("\n".join(lines) + "\n")
+    log("missing-links report: %d people -> %s" % (len(lines), os.path.relpath(path, ROOT)))
+
+
+def sanity(out):
+    ids = [n["id"] for n in out["nodes"]]
+    assert len(ids) == len(set(ids)), "duplicate node ids"
+    for key in ("qid", "mgp", "inspire"):
+        vals = [n[key] for n in out["nodes"] if n.get(key)]
+        dup = {v for v in vals if vals.count(v) > 1}
+        if dup:
+            log("WARNING duplicate %s across nodes: %s" % (key, sorted(dup)[:10]))
+    noderel = sum(1 for n in out["nodes"] if n["id"] != "me" and not n.get("relation"))
+    if noderel:
+        log("WARNING %d nodes have no relation to me" % noderel)
+
+
+if __name__ == "__main__":
+    main()
