@@ -524,15 +524,6 @@ def enrich(recs, cfg):
         na = sorted(d["named_after"], key=lambda x: (not x["wiki"], x["label"] or ""))
         r["named_after_total"] = len(na)  # STEM topics only
         r["named_after"] = na[:40]
-        tracked = {p["label"] for p in r["prizes"]}
-        others, seen = [], set()
-        for a in sorted(d["awards"], key=lambda a: a["year"] or 9999):
-            if a["label"] in tracked or a["label"] in seen:
-                continue
-            seen.add(a["label"])
-            others.append(a)
-        r["other_awards"] = others[:25]
-        r["other_awards_total"] = len(others)
 
     todo = [r for r in recs.values() if r.get("wikipedia")]
     titles = {r["id"]: wikipedia.title_from_url(r["wikipedia"]) for r in todo}

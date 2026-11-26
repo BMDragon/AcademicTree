@@ -383,12 +383,12 @@
     if (n.id !== "me") h += `<button type="button" class="connect" data-connect="${esc(n.id)}">Show only the connection to me</button>`;
     const aw = n.prizes.map(p => `<li><img src="img/awards/${p.key}.svg" alt="">${esc(p.label)}${p.year ? " (" + p.year + ")" : ""}</li>`);
     if (n.qb) aw.push(`<li><img src="img/awards/qb.svg" alt="">Quizbowl canon: ${n.qb} science answerlines</li>`);
+    if (n.extract) h += `<h3>About</h3><div class="extract">${esc(n.extract)}</div>`;
     h += list("Major prizes", aw, "awards");
     h += chips("Known for", (n.known_for || []).slice(0, 18).map(k => link(k.url, k.label)));
     const na = n.named_after || [];
     h += chips("Named after them", na.map(x => x.wiki ? link(x.url, x.label) : `<span title="${esc(x.desc || "")}">${link(x.url, x.label)}</span>`),
       n.named_after_total > na.length ? `+${n.named_after_total - na.length} more on Wikidata` : "");
-    if (n.extract) h += `<div class="extract">${esc(n.extract)}</div>`;
     const deg = (n.degrees || []).map(d => `<li>${esc(d.degree)}, ${esc(d.school)}${d.year ? " " + d.year : ""}</li>`);
     if (deg.length && n.thesis) deg.push(`<li><i class="tex">${esc(n.thesis)}</i></li>`);
     h += list("Degrees", deg);
@@ -399,8 +399,6 @@
     if (n.employers && n.employers.length) h += chips("Institutions", n.employers.slice(0, 10).map(x => `<span>${esc(x)}</span>`));
     else if (n.positions && n.positions.length) h += chips("Institutions", [...new Set(n.positions.map(p => p.institution))].slice(0, 10).map(x => `<span>${esc(x)}</span>`));
     if (n.fields && n.fields.length) h += chips("Fields", n.fields.slice(0, 8).map(x => `<span>${esc(x)}</span>`));
-    const oa = (n.other_awards || []).slice(0, 12).map(a => `<span>${esc(a.label)}${a.year ? " " + a.year : ""}</span>`);
-    h += chips("Other honors", oa, n.other_awards_total > oa.length ? `+${n.other_awards_total - oa.length} more` : "");
     const src = [];
     if (n.wikipedia) src.push(link(n.wikipedia, "Wikipedia"));
     if (n.qid) src.push(link(`https://www.wikidata.org/wiki/${n.qid}`, "Wikidata"));
