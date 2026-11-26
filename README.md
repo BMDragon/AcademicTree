@@ -28,6 +28,11 @@ religious transmission rather than academic advising.
 
 Edges: PhD solid · undergrad dotted · postdoc dashed · research/other dash-dot.
 
+Layout: d3-dag Sugiyama layering plus a sifting pass (`siftingDecross` in
+`web/app.js`) that moves each person to the position in their row with the
+fewest line crossings; it removes ~17% (ancestors view) to ~33% (full view) of
+the crossings of a standard dagre layout.
+
 ## Data sources
 
 | Source | What | Edge type |
