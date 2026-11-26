@@ -1,0 +1,43 @@
+[21:37:03] saved academictree pages: 0
+[21:37:03] notables: prize laureates
+[21:37:03]   999 laureates
+[21:37:03] notables: quizbowl (QB Reader, Science)
+[21:37:03]   QB: 10633 name-like answerlines -> resolving 10693 labels on Wikidata
+[21:37:03]   counting question-text mentions for 594 QB scientists
+[21:37:03]   242 quizbowl-canonical scientists (>= 5 answerlines or > 10 question mentions)
+[21:37:03] crawling advisor lineages
+[21:37:03] round 1: {'insp': 2, 'mgp': 1, 'wd': 1164}  (http {'hit': 789, 'miss': 0, 'err': 0})
+[21:39:31] round 2: {'at': 925, 'bai': 413, 'insp': 2, 'mgp': 560, 'wd': 634}  (http {'hit': 799, 'miss': 48, 'err': 0})
+[21:42:16] round 3: {'at': 409, 'bai': 51, 'insp': 147, 'mgp': 458, 'wd': 358}  (http {'hit': 1784, 'miss': 79, 'err': 0})
+[21:44:50] round 4: {'at': 213, 'bai': 18, 'insp': 83, 'mgp': 310, 'wd': 236}  (http {'hit': 2537, 'miss': 103, 'err': 0})
+[21:45:26] round 5: {'at': 124, 'bai': 7, 'insp': 43, 'mgp': 207, 'wd': 189}  (http {'hit': 3004, 'miss': 119, 'err': 0})
+[21:45:53] round 6: {'at': 109, 'bai': 4, 'insp': 24, 'mgp': 153, 'wd': 150}  (http {'hit': 3301, 'miss': 134, 'err': 0})
+[21:46:27] round 7: {'at': 93, 'bai': 3, 'insp': 15, 'mgp': 114, 'wd': 143}  (http {'hit': 3506, 'miss': 142, 'err': 0})
+[21:46:28] round 8: {'at': 79, 'insp': 8, 'mgp': 96, 'wd': 112}  (http {'hit': 3662, 'miss': 143, 'err': 0})
+[21:46:28] round 9: {'at': 51, 'bai': 1, 'insp': 4, 'mgp': 74, 'wd': 82}  (http {'hit': 3783, 'miss': 143, 'err': 0})
+[21:46:28] round 10: {'at': 33, 'insp': 5, 'mgp': 54, 'wd': 75}  (http {'hit': 3876, 'miss': 143, 'err': 0})
+[21:46:28] round 11: {'at': 35, 'insp': 3, 'mgp': 41, 'wd': 68}  (http {'hit': 3949, 'miss': 143, 'err': 0})
+[21:46:28] round 12: {'at': 21, 'mgp': 14, 'wd': 48}  (http {'hit': 4004, 'miss': 143, 'err': 0})
+[21:46:28] round 13: {'at': 19, 'mgp': 7, 'wd': 35}  (http {'hit': 4026, 'miss': 143, 'err': 0})
+[21:46:28] round 14: {'at': 11, 'mgp': 5, 'wd': 35}  (http {'hit': 4041, 'miss': 143, 'err': 0})
+[21:46:28] round 15: {'at': 7, 'mgp': 2, 'wd': 24}  (http {'hit': 4054, 'miss': 143, 'err': 0})
+[21:46:28] round 16: {'at': 3, 'mgp': 1, 'wd': 10}  (http {'hit': 4064, 'miss': 143, 'err': 0})
+[21:46:28] round 17: {'at': 1, 'mgp': 2, 'wd': 10}  (http {'hit': 4073, 'miss': 143, 'err': 0})
+[21:46:28] round 18: {'at': 1, 'mgp': 3, 'wd': 5}  (http {'hit': 4083, 'miss': 143, 'err': 0})
+[21:46:28] round 19: {'at': 1, 'mgp': 2, 'wd': 5}  (http {'hit': 4094, 'miss': 143, 'err': 0})
+[21:46:28] round 20: {'mgp': 1, 'wd': 5}  (http {'hit': 4104, 'miss': 143, 'err': 0})
+[21:46:28] round 21: {'mgp': 1, 'wd': 7}  (http {'hit': 4112, 'miss': 143, 'err': 0})
+[21:46:28] round 22: {'at': 1, 'mgp': 4, 'wd': 7}  (http {'hit': 4120, 'miss': 143, 'err': 0})
+[21:46:28] round 23: {'mgp': 1, 'wd': 7}  (http {'hit': 4132, 'miss': 143, 'err': 0})
+[21:46:28] round 24: {'wd': 4}  (http {'hit': 4140, 'miss': 143, 'err': 0})
+[21:46:28] round 25: {'wd': 2}  (http {'hit': 4146, 'miss': 143, 'err': 0})
+[21:46:28] dropping 6 non-person nodes: ['Classical high school number 1 named after V. G. Belinsky', 'Giral', 'Hiller', 'König Wilhelm-Gymnasium zu Breslau', 'Lazarev Institute of Oriental Languages', 'wd:Q28260013']
+[21:46:28] dropped 8 cycle edges
+[21:46:28] ancestors: 620   kept nodes: 2091
+[21:46:28] enriching 2059 Wikidata people
+[21:54:10] classifying 8984 named-after items (STEM filter)
+[22:12:26] fetching Wikipedia data for 1753 articles (batched)
+[22:18:03] counting QB question mentions for 1833 more people in the tree
+[22:18:03] missing-links report: 7 people -> data/missing_links.txt
+[22:18:03] wrote web/data/graph.json  {"nodes": 2091, "edges": 2744, "ancestors": 620, "laureates": {"nobel": 272, "fields": 60, "turing": 50, "wolf": 125}, "quizbowl": 192}
+[22:18:03] http {'hit': 6234, 'miss': 579, 'err': 0}

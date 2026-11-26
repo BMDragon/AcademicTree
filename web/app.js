@@ -29,8 +29,14 @@
   measurer.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
   function badges(n) {
     const b = n.prizes.map(p => ({ key: p.key, field: p.field, title: `${p.label}${p.year ? " " + p.year : ""}` }));
-    if (n.qb) b.push({ key: "qb", title: `Quizbowl: ${n.qb} science answerlines` });
+    if (n.qb_canon) b.push({ key: "qb", title: `Quizbowl canon: ${qbText(n)}` });
     return b;
+  }
+  function qbText(n) {
+    const parts = [];
+    if (n.qb) parts.push(`${n.qb} science answerline${n.qb === 1 ? "" : "s"}`);
+    if (n.qb_mentions) parts.push(`named in ${n.qb_mentions} science question${n.qb_mentions === 1 ? "" : "s"}`);
+    return parts.join(" · ");
   }
   function years(n) {
     const b = (n.birth || "").slice(0, 4), d = (n.death || "").slice(0, 4);
@@ -139,7 +145,7 @@
     const graph = D.graphConnect()(links);
     const sugi = D.sugiyama()
       .nodeSize(nd => { const n = byId.get(nd.data); return [n._w, n._h]; })
-      .gap([14, 46])
+      .gap([20, 46])
       .layering(D.layeringSimplex())
       .decross(siftingDecross(D))
       .coord(D.coordGreedy());
@@ -149,9 +155,19 @@
       const n = byId.get(nd.data);
       pos.set(nd.data, { x: nd.x + M, y: nd.y + M, width: n._w, height: n._h });
     }
+    // Route each line so it only bends in the empty band between rows: it
+    // leaves the advisor's box at the bottom, passes every intermediate row
+    // vertically (beside the boxes there, never behind them) and enters the
+    // student's box at the top.
+    const HALF = 20;  // half the tallest box + 2px
     for (const l of graph.links()) {
       const e = edgeOf.get(l.source.data + ">" + l.target.data);
-      eds.push({ e, points: l.points.map(([x, y]) => ({ x: x + M, y: y + M })) });
+      const raw = l.points.map(([x, y]) => ({ x: x + M, y: y + M }));
+      const pts = [{ x: raw[0].x, y: raw[0].y + HALF }];
+      for (let i = 1; i < raw.length - 1; i++) pts.push({ x: raw[i].x, y: raw[i].y - HALF }, { x: raw[i].x, y: raw[i].y + HALF });
+      const last = raw[raw.length - 1];
+      pts.push({ x: last.x, y: last.y - HALF });
+      eds.push({ e, points: pts });
     }
     // Put "me" alone on a row below everyone, centred under my advisors
     // (otherwise childless notables can sit level with or below me).
@@ -179,7 +195,8 @@
 
   // ---------- draw ----------------------------------------------------------
   const svg = d3.select("#canvas"), vp = d3.select("#viewport");
-  const line = d3.line().x(p => p.x).y(p => p.y).curve(d3.curveBasis);
+  // monotone in y: passes exactly through the routing points (no overshoot into boxes)
+  const line = d3.line().x(p => p.x).y(p => p.y).curve(d3.curveMonotoneY);
   let edgeSel = d3.select("#edges").selectAll("path"), nodeSel = d3.select("#nodes").selectAll("g.node");
   let G = null, currentView = "all", visible = new Set();
 
@@ -382,9 +399,18 @@
     h += relationHTML(n);
     if (n.id !== "me") h += `<button type="button" class="connect" data-connect="${esc(n.id)}">Show only the connection to me</button>`;
     const aw = n.prizes.map(p => `<li><img src="img/awards/${p.key}.svg" alt="">${esc(p.label)}${p.year ? " (" + p.year + ")" : ""}</li>`);
-    if (n.qb) aw.push(`<li><img src="img/awards/qb.svg" alt="">Quizbowl canon: ${n.qb} science answerlines</li>`);
+    if (n.qb_canon) aw.push(`<li><img src="img/awards/qb.svg" alt="">Quizbowl canon: ${esc(qbText(n))}</li>`);
     h += list("Major prizes", aw, "awards");
-    h += chips("Known for", (n.known_for || []).slice(0, 18).map(k => link(k.url, k.label)));
+    // Anything also in "Named after them" is shown only there.
+    const keyOf = (label, url) => {
+      let t = label || "";
+      try { if (url && url.includes("/wiki/")) t = decodeURIComponent(url.split("/wiki/").pop()); } catch (e) { /* keep label */ }
+      return t.toLowerCase().replace(/[_\s]+/g, " ").replace(/[\u2010-\u2015-]/g, "-").replace(/\s*\([^)]*\)$/, "").trim();
+    };
+    const named = new Set();
+    for (const x of n.named_after || []) { named.add(keyOf(x.label, x.url)); named.add(keyOf(x.label)); }
+    const kf = (n.known_for || []).filter(k => !named.has(keyOf(k.label, k.url)) && !named.has(keyOf(k.label)));
+    h += chips("Known for", kf.slice(0, 18).map(k => link(k.url, k.label)));
     const na = n.named_after || [];
     h += chips("Named after them", na.map(x => x.wiki ? link(x.url, x.label) : `<span title="${esc(x.desc || "")}">${link(x.url, x.label)}</span>`),
       n.named_after_total > na.length ? `+${n.named_after_total - na.length} more on Wikidata` : "");

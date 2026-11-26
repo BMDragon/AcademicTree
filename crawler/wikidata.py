@@ -9,17 +9,21 @@ BATCH = 150
 
 
 def sparql(query):
+    import json
+    import time
     data = urllib.parse.urlencode({"query": query, "format": "json"})
     js = None
-    txt = http.get(ENDPOINT, data=data, headers={
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/sparql-results+json"})
-    if txt:
-        import json
-        try:
-            js = json.loads(txt)
-        except ValueError:
-            js = None
+    for attempt in range(4):  # the endpoint times out now and then under load
+        txt = http.get(ENDPOINT, data=data, headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/sparql-results+json"})
+        if txt:
+            try:
+                js = json.loads(txt)
+                break
+            except ValueError:
+                js = None
+        time.sleep(20 * (attempt + 1))
     if js is None:
         raise RuntimeError("SPARQL query failed:\n" + query[:500])
     return [{k: v["value"] for k, v in b.items()} for b in js["results"]["bindings"]]

@@ -60,6 +60,7 @@ class Crawler:
         self.saved_at = {}
         self.bai_done = {}
         self.orcid_done = {}
+        self.nonhuman = set()  # Wikidata items that are not people (schools etc.)
 
     # ----- bookkeeping -------------------------------------------------
     def add(self, ref, depth):
@@ -89,6 +90,7 @@ class Crawler:
             r = "wd:" + q
             self.info.setdefault(r, {})["name"] = d["label"]
             if not d["human"]:
+                self.nonhuman.add(r)
                 continue
             cutoff = self.cfg.get("student_of_min_birth_year", 1400)
             by = d.get("birth_year")
@@ -211,6 +213,11 @@ class Crawler:
 # ---------------------------------------------------------------------------
 # Graph assembly
 # ---------------------------------------------------------------------------
+INSTITUTION = re.compile(
+    r"\b(Gymnasium|School|Schule|University|Universit[äé]t|Universit[ée]|College|Academy|Akademie|"
+    r"Institute|Institut|Lyceum|Lyc[ée]e|Hochschule|Seminary|Seminar)\b")
+
+
 def best_name(refs, info):
     for kind in ("wd", "insp", "mgp", "at", "nm"):
         for r in sorted(refs):
@@ -257,12 +264,28 @@ def assemble(cr, me_edges):
         if r.startswith("bai:"):
             continue
         groups.setdefault(uf.find(r), set()).add(r)
+    # Drop advisors that are not people: Wikidata items that are not humans, or
+    # (for people known only from other sources) institution-like names.
+    bad = set()
+    for g, refs in groups.items():
+        wds = {r for r in refs if r.startswith("wd:")}
+        if wds:
+            if wds <= cr.nonhuman:
+                bad.add(g)
+        elif INSTITUTION.search(best_name(refs, cr.info)):
+            bad.add(g)
+    if bad:
+        log("dropping %d non-person nodes: %s" % (len(bad), sorted(best_name(groups[g], cr.info) for g in bad)[:10]))
+    for g in bad:
+        del groups[g]
     parents = {}
     for c, advs in cr.adv.items():
         gc = uf.find(c)
+        if gc in bad:
+            continue
         for a, typ in advs.items():
             ga = uf.find(a)
-            if ga == gc:
+            if ga == gc or ga in bad:
                 continue
             cur = parents.setdefault(gc, {}).get(ga)
             src = c.split(":")[0]
@@ -379,12 +402,19 @@ def main():
     log("notables: prize laureates")
     prizes = notables.prizes(cfg["prizes"])
     log("  %d laureates" % len(prizes))
-    qb = {}
+    qb_ans, qb_men, qb_canon = {}, {}, set()
+    qcfg = cfg["quizbowl"]
     if not args.no_qb:
-        log("notables: quizbowl (QB Reader, %s)" % cfg["quizbowl"]["category"])
-        qb = notables.quizbowl(cfg["quizbowl"], log=log)
-        log("  %d quizbowl-canonical scientists" % len(qb))
-    for q in set(prizes) | set(qb):
+        log("notables: quizbowl (QB Reader, %s)" % qcfg["category"])
+        qb_ans = notables.quizbowl_answers(qcfg, log=log)
+        labels = {q: d["label"] for q, d in wikidata.links(list(qb_ans)).items()}
+        log("  counting question-text mentions for %d QB scientists" % len(labels))
+        qb_men = notables.mentions_many(labels, qcfg["category"])
+        qb_canon = {q for q in qb_ans if qb_ans[q] >= qcfg["min_count"]
+                    or qb_men.get(q, 0) > qcfg["mentions_more_than"]}
+        log("  %d quizbowl-canonical scientists (>= %d answerlines or > %d question mentions)"
+            % (len(qb_canon), qcfg["min_count"], qcfg["mentions_more_than"]))
+    for q in set(prizes) | qb_canon:
         cr.add("wd:" + q, 0)
 
     log("crawling advisor lineages")
@@ -395,7 +425,7 @@ def main():
     if dropped:
         log("dropped %d cycle edges" % len(dropped))
     find = cr.uf.find
-    notable_groups = {find("wd:" + q) for q in set(prizes) | set(qb)}
+    notable_groups = {find("wd:" + q) for q in set(prizes) | qb_canon}
     anc, keep = select(parents, notable_groups)
     log("ancestors: %d   kept nodes: %d" % (len(anc), len(keep)))
 
@@ -437,8 +467,10 @@ def main():
             r["prizes"].append({"key": pc["key"], "field": pc["field"], "label": pc["label"],
                                 "year": pz["year"]})
         r["prizes"].sort(key=lambda x: (x["year"] or 9999))
-        if q and q in qb:
-            r["qb"] = qb[q]
+        if q and q in qb_ans:
+            r["qb"] = qb_ans[q]
+        if q and q in qb_men:
+            r["qb_mentions"] = qb_men[q]
         r["ancestor"] = g in anc
         r["notable"] = g in notable_groups
         r["relation"] = rel_all.get(g)
@@ -456,6 +488,18 @@ def main():
 
     if not args.no_enrich:
         enrich(recs, cfg)
+        dedupe_known_for(recs)
+    if not args.no_qb:
+        # question-text mentions for everyone else in the tree (badges)
+        todo = {g: r["name"] for g, r in recs.items() if g != "me" and "qb_mentions" not in r}
+        log("counting QB question mentions for %d more people in the tree" % len(todo))
+        for g, m in notables.mentions_many(todo, qcfg["category"]).items():
+            recs[g]["qb_mentions"] = m
+    for r in recs.values():
+        r["qb_canon"] = (r.get("qb", 0) >= qcfg["min_count"]
+                         or r.get("qb_mentions", 0) > qcfg["mentions_more_than"])
+        if r["qb_canon"]:
+            r["notable"] = True
 
     edges = []
     for c, ps in sub.items():
@@ -468,7 +512,7 @@ def main():
            "stats": {"nodes": len(recs), "edges": len(edges), "ancestors": len(anc),
                      "laureates": {k: sum(1 for r in recs.values() if any(p["key"] == k for p in r["prizes"]))
                                    for k in ("nobel", "fields", "turing", "wolf")},
-                     "quizbowl": sum(1 for r in recs.values() if r.get("qb"))}}
+                     "quizbowl": sum(1 for r in recs.values() if r.get("qb_canon"))}}
     sanity(out)
     path = os.path.join(ROOT, "web", "data", "graph.json")
     with open(path, "w", encoding="utf-8") as f:
@@ -539,6 +583,29 @@ def enrich(recs, cfg):
         for k in kf.get(t, []):
             if k["label"].lower() not in have and not re.match(r"(?i)^(full list|list of|see list|more)\b", k["label"]):
                 r.setdefault("known_for", []).append(k)
+
+
+def _topic_key(label, url=None):
+    t = label or ""
+    if url and "/wiki/" in url:
+        import urllib.parse
+        t = urllib.parse.unquote(url.rsplit("/wiki/", 1)[-1])
+    t = re.sub(r"[_\s]+", " ", t.lower())
+    t = re.sub(r"[\u2010-\u2015-]", "-", t)
+    return re.sub(r"\s*\([^)]*\)$", "", t).strip()
+
+
+def dedupe_known_for(recs):
+    """Anything listed under "named after them" is removed from "known for"."""
+    for r in recs.values():
+        named = set()
+        for x in r.get("named_after", []):
+            named.add(_topic_key(x["label"], x.get("url")))
+            named.add(_topic_key(x["label"]))
+        if r.get("known_for"):
+            r["known_for"] = [k for k in r["known_for"]
+                              if _topic_key(k["label"], k.get("url")) not in named
+                              and _topic_key(k["label"]) not in named]
 
 
 def report_missing(recs, sub, anc):

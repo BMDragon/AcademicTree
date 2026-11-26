@@ -41,7 +41,7 @@ the crossings of a standard dagre layout.
 | INSPIRE-HEP | author advisors with degree type | phd / undergrad (bachelor) / research (master, other) |
 | Math Genealogy Project | doctoral advisors | phd |
 | academictree.org | pages **you save** into `data/academictree_saved/` | typed (grad student, post-doc, research assistant, undergrad) |
-| QB Reader | science answerline frequency (≥ `quizbowl.min_count`) | – |
+| QB Reader | science answerline frequency (≥ `quizbowl.min_count`) or full name in > `quizbowl.mentions_more_than` science questions | – |
 | Wikipedia | summary, photo, infobox "known for" | – |
 
 academictree.org is behind a Cloudflare check, so it can't be crawled. After

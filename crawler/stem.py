@@ -46,6 +46,13 @@ EXCLUDE_ROOTS = {
 }
 
 
+# Theoretical objects are kept even when also filed under an excluded class
+# (the Einstein–Rosen bridge is both "astronomical object" and "hypothetical entity").
+OVERRIDE_ROOTS = {
+    "Q18706315": "hypothetical entity", "Q5961257": "hypothetical astronomical object", "Q7544": "wormhole",
+}
+
+
 def _reaching(qids, roots):
     out = set()
     for chunk in wikidata._chunks(sorted(qids), 60):
@@ -83,6 +90,7 @@ def stem_items(qids):
     qids = {q for q in qids if q.startswith("Q")}  # drop lexemes (L…) and the like
     if not qids:
         return set()
-    excluded = _reaching(qids, EXCLUDE_ROOTS)
+    theoretical = _reaching(qids, OVERRIDE_ROOTS)
+    excluded = _reaching(qids, EXCLUDE_ROOTS) - theoretical
     cand = qids - excluded
-    return (_reaching(cand, STEM_ROOTS) | _bare_concepts(cand)) if cand else set()
+    return (_reaching(cand, STEM_ROOTS) | _bare_concepts(cand) | theoretical) if cand else set()

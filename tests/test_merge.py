@@ -54,6 +54,23 @@ class Merge(unittest.TestCase):
         build.assemble(cr, [])
         self.assertEqual(cr.uf.find("wd:Q2"), cr.uf.find("wd:Q3"))
 
+    def test_non_person_advisors_dropped(self):
+        cr = crawler()
+        cr.info.update({"wd:Q1": {"name": "Max Born"}, "wd:Q2": {"name": "König Wilhelm-Gymnasium zu Breslau"},
+                        "wd:Q3": {"name": "Carl Runge"}, "mgp:7": {"name": "Alonzo Church"},
+                        "mgp:8": {"name": "Universität Leipzig"}})
+        cr.add("wd:Q1", 0)
+        cr.nonhuman.add("wd:Q2")
+        cr.add_adv("wd:Q1", "wd:Q2", "research")
+        cr.add_adv("wd:Q1", "wd:Q3", "phd")
+        cr.add_adv("wd:Q3", "mgp:7", "phd")
+        cr.add_adv("wd:Q3", "mgp:8", "phd")
+        groups, parents = build.assemble(cr, [])
+        f = cr.uf.find
+        self.assertEqual(set(parents[f("wd:Q1")]), {f("wd:Q3")})
+        self.assertEqual(set(parents[f("wd:Q3")]), {f("mgp:7")})   # Alonzo Church is a person
+        self.assertNotIn(f("wd:Q2"), groups)
+
     def test_names(self):
         self.assertTrue(names.same_person("Stoecker, Horst", "Horst Stöcker"))
         self.assertTrue(names.same_person("Barish, Barry C.", "Barry Clark Barish"))

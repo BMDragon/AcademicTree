@@ -77,7 +77,8 @@
   "quizbowl": {
     "category": "Science",
     "min_count": 5,
-    "frequency_limit": 20000
+    "frequency_limit": 20000,
+    "mentions_more_than": 10
   },
   "sources": {
     "wikidata": true,
@@ -91,6 +92,6 @@
     "www.mathgenealogy.org": 0.5,
     "inspirehep.net": 0.4,
     "en.wikipedia.org": 3.0,
-    "www.qbreader.org": 0.5
+    "www.qbreader.org": 0.35
   }
 }

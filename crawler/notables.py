@@ -38,8 +38,11 @@ def _variants(a):
             " ".join(w.lower() if w.lower() in PARTICLES else w for w in words)}
 
 
-def quizbowl(cfg, log=print):
-    """{qid: count} for scientists answered >= min_count times in QB science questions."""
+QB_QUERY = "https://www.qbreader.org/api/query"
+
+
+def quizbowl_answers(cfg, log=print):
+    """{qid: answerline count} for every scientist who is a QB science answerline at least once."""
     url = QB_FREQ + "?" + urllib.parse.urlencode(
         {"category": cfg["category"], "level": "all", "limit": cfg["frequency_limit"]})
     js = http.get_json(url)
@@ -61,8 +64,8 @@ def quizbowl(cfg, log=print):
             if ans not in seen.setdefault(q, set()):
                 seen[q].add(ans)
                 counts[q] = counts.get(q, 0) + c
-    cand = [q for q, c in counts.items() if c >= cfg["min_count"]]
     sci = set()
+    cand = sorted(counts)
     for i in range(0, len(cand), 150):
         chunk = cand[i:i + 150]
         rows = wikidata.sparql("""
@@ -71,3 +74,38 @@ SELECT DISTINCT ?p WHERE { VALUES ?p { %s } VALUES ?occ { %s }
                                      " ".join("wd:" + o for o in SCI_OCCUPATIONS)))
         sci.update(wikidata.qid(r["p"]) for r in rows)
     return {q: counts[q] for q in cand if q in sci}
+
+
+def name_variants(name):
+    """Full name, plus first+last without middle names/initials. Surname-only
+    searches are not used (they match eponyms and collide across people)."""
+    import re
+    name = re.sub(r"\s*\([^)]*\)", "", name or "").strip()
+    out = [name] if len(name.split()) >= 2 else []
+    t = name.split()
+    # drop middle *initials* only ("Barry C. Barish" -> "Barry Barish"); dropping
+    # spelled-out middle names would turn "Charles Galton Darwin" into "Charles Darwin"
+    if len(t) > 2 and all(re.fullmatch(r"[A-Z]\.?", m) for m in t[1:-1]):
+        out.append(t[0] + " " + t[-1])
+    return out
+
+
+def mentions(name, category="Science"):
+    """Number of QB questions (tossups + bonuses) whose text contains the name."""
+    best = 0
+    for v in name_variants(name):
+        q = urllib.parse.urlencode({"queryString": v, "searchType": "question", "categories": category,
+                                    "exactPhrase": "true", "maxReturnLength": 1})
+        js = http.get_json(QB_QUERY + "?" + q)
+        if js:
+            best = max(best, js.get("tossups", {}).get("count", 0) + js.get("bonuses", {}).get("count", 0))
+    return best
+
+
+def mentions_many(names, category="Science", log=print):
+    """{key: mentions} for {key: name}."""
+    from concurrent.futures import ThreadPoolExecutor
+    keys = sorted(names)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        vals = list(pool.map(lambda k: mentions(names[k], category), keys))
+    return dict(zip(keys, vals))
