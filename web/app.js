@@ -383,7 +383,6 @@
     if (n.id !== "me") h += `<button type="button" class="connect" data-connect="${esc(n.id)}">Show only the connection to me</button>`;
     const aw = n.prizes.map(p => `<li><img src="img/awards/${p.key}.svg" alt="">${esc(p.label)}${p.year ? " (" + p.year + ")" : ""}</li>`);
     if (n.qb) aw.push(`<li><img src="img/awards/qb.svg" alt="">Quizbowl canon: ${n.qb} science answerlines</li>`);
-    if (n.extract) h += `<h3>About</h3><div class="extract">${esc(n.extract)}</div>`;
     h += list("Major prizes", aw, "awards");
     h += chips("Known for", (n.known_for || []).slice(0, 18).map(k => link(k.url, k.label)));
     const na = n.named_after || [];

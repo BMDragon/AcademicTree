@@ -529,13 +529,10 @@ def enrich(recs, cfg):
     titles = {r["id"]: wikipedia.title_from_url(r["wikipedia"]) for r in todo}
     tl = sorted(set(titles.values()))  # stable batches -> cache hits across runs
     log("fetching Wikipedia data for %d articles (batched)" % len(tl))
-    ex = wikipedia.extracts(tl)
     th = wikipedia.thumbnails(tl)
     kf = wikipedia.known_for(tl)
     for r in todo:
         t = titles[r["id"]]
-        if ex.get(t):
-            r["extract"] = ex[t]
         if th.get(t):
             r["thumbnail"] = th[t]
         have = {k["label"].lower() for k in r.get("known_for", []) if k.get("label")}
