@@ -1,4 +1,5 @@
 """Wikidata SPARQL access: advisor links, ID crosswalks, prizes, enrichment."""
+import re
 import urllib.parse
 
 from . import http
@@ -161,6 +162,21 @@ SELECT DISTINCT ?l ?p ?n WHERE {
     return out
 
 
+def english(label):
+    """The label if it is a real English label (label service returns the QID otherwise)."""
+    if not label or re.match(r"^Q\d+$", label):
+        return None
+    return label
+
+
+def wiki_title(url):
+    if not url:
+        return None
+    import urllib.parse as up
+    t = up.unquote(url.rsplit("/wiki/", 1)[-1]).replace("_", " ")
+    return t or None
+
+
 def enrich(qids):
     """Biographical facts for display. Returns {qid: dict}."""
     out = {q: {"awards": [], "known_for": [], "named_after": [], "employers": [],
@@ -168,8 +184,10 @@ def enrich(qids):
     for chunk in _chunks(sorted(set(qids)), 100):
         v = _values(chunk)
         for r in sparql("""
-SELECT ?p ?pLabel ?desc ?birth ?death ?bplaceLabel ?img ?wiki ?citLabel WHERE {
+SELECT ?p ?en ?alt ?desc ?birth ?death ?bplaceLabel ?img ?wiki ?citLabel WHERE {
   VALUES ?p { %s }
+  OPTIONAL { ?p rdfs:label ?en FILTER(LANG(?en)="en") }
+  OPTIONAL { ?p rdfs:label ?alt FILTER(LANG(?alt) IN ("mul","de","fr","es","it","nl","sv","pl")) }
   OPTIONAL { ?p schema:description ?desc FILTER(LANG(?desc)="en") }
   OPTIONAL { ?p wdt:P569 ?birth }
   OPTIONAL { ?p wdt:P570 ?death }
@@ -177,14 +195,19 @@ SELECT ?p ?pLabel ?desc ?birth ?death ?bplaceLabel ?img ?wiki ?citLabel WHERE {
   OPTIONAL { ?p wdt:P27 ?cit }
   OPTIONAL { ?p wdt:P18 ?img }
   OPTIONAL { ?wiki schema:about ?p ; schema:isPartOf <https://en.wikipedia.org/> }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,de,fr,mul". }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }""" % v):
             d = out[qid(r["p"])]
-            d.setdefault("label", r.get("pLabel"))
+            if r.get("en"):
+                d.setdefault("label_en", r["en"])
+            if r.get("alt"):
+                d.setdefault("label_alt", []).append(r["alt"])
             for k_src, k_dst in (("desc", "description"), ("birth", "birth"), ("death", "death"),
                                  ("bplaceLabel", "birthplace"), ("img", "image"), ("wiki", "wikipedia"),
                                  ("citLabel", "citizenship")):
                 val = r.get(k_src)
+                if k_src in ("bplaceLabel", "citLabel"):
+                    val = english(val)
                 if k_src in ("birth", "death") and val and val.startswith("http"):
                     val = None  # "unknown value"
                 if val and not d.get(k_dst):
@@ -193,30 +216,38 @@ SELECT ?p ?pLabel ?desc ?birth ?death ?bplaceLabel ?img ?wiki ?citLabel WHERE {
 SELECT ?p ?aw ?awLabel ?time WHERE {
   VALUES ?p { %s }
   ?p p:P166 ?st . ?st ps:P166 ?aw . OPTIONAL { ?st pq:P585 ?time }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,mul". }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }""" % v):
+            if not english(r.get("awLabel")):
+                continue
             out[qid(r["p"])]["awards"].append({
                 "qid": qid(r["aw"]), "label": r.get("awLabel"),
                 "year": _year(r.get("time"))})
         for prop, key in (("P108", "employers"), ("P101", "fields"), ("P69", "educated")):
             for r in sparql("""
 SELECT ?p ?xLabel WHERE { VALUES ?p { %s } ?p wdt:%s ?x .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,mul". } }""" % (v, prop)):
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }""" % (v, prop)):
                 lst = out[qid(r["p"])][key]
-                if r.get("xLabel") and r["xLabel"] not in lst:
+                if english(r.get("xLabel")) and r["xLabel"] not in lst:
                     lst.append(r["xLabel"])
         for r in sparql("""
 SELECT ?p ?x ?xLabel ?wiki WHERE { VALUES ?p { %s } ?p wdt:P800 ?x .
   OPTIONAL { ?wiki schema:about ?x ; schema:isPartOf <https://en.wikipedia.org/> }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,mul". } }""" % v):
-            out[qid(r["p"])]["known_for"].append(
-                {"label": r.get("xLabel"), "url": r.get("wiki") or r["x"]})
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }""" % v):
+            # only works with an English Wikipedia article (labels of the rest
+            # are often untranslated); the article title is the label
+            lbl = wiki_title(r.get("wiki"))
+            if lbl:
+                out[qid(r["p"])]["known_for"].append({"label": lbl, "url": r["wiki"]})
         for r in sparql("""
 SELECT ?p ?x ?xLabel ?xDesc ?wiki WHERE { VALUES ?p { %s } ?x wdt:P138 ?p .
   OPTIONAL { ?x schema:description ?xDesc FILTER(LANG(?xDesc)="en") }
   OPTIONAL { ?wiki schema:about ?x ; schema:isPartOf <https://en.wikipedia.org/> }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,mul". } }""" % v):
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }""" % v):
+            lbl = english(r.get("xLabel")) or wiki_title(r.get("wiki"))
+            if not lbl:
+                continue
             out[qid(r["p"])]["named_after"].append(
-                {"label": r.get("xLabel"), "desc": r.get("xDesc"),
+                {"label": lbl, "desc": r.get("xDesc"), "qid": qid(r["x"]),
                  "url": r.get("wiki") or r["x"], "wiki": bool(r.get("wiki"))})
     return out

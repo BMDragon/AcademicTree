@@ -321,7 +321,7 @@
       n.named_after_total > na.length ? `+${n.named_after_total - na.length} more on Wikidata` : "");
     if (n.extract) h += `<div class="extract">${esc(n.extract)}</div>`;
     const deg = (n.degrees || []).map(d => `<li>${esc(d.degree)}, ${esc(d.school)}${d.year ? " " + d.year : ""}</li>`);
-    if (deg.length && n.thesis) deg.push(`<li><i>${esc(n.thesis)}</i></li>`);
+    if (deg.length && n.thesis) deg.push(`<li><i class="tex">${esc(n.thesis)}</i></li>`);
     h += list("Degrees", deg);
     const adv = (parents.get(n.id) || []).map(e => `<li>${esc(byId.get(e.source).name)} <span class="more">(${e.type})</span></li>`);
     h += list("Advisors in this tree", adv);
@@ -353,6 +353,14 @@
   function show(n, ev) {
     clearTimeout(hideTimer);
     card.innerHTML = cardHTML(n);
+    // Thesis titles (Math Genealogy) carry inline LaTeX like $\mathbb{R}^3$.
+    if (window.renderMathInElement) {
+      for (const el of card.querySelectorAll(".tex")) renderMathInElement(el, {
+        delimiters: [{ left: "$$", right: "$$", display: false }, { left: "$", right: "$", display: false },
+                     { left: "\\(", right: "\\)", display: false }],
+        throwOnError: false,
+      });
+    }
     card.hidden = false;
     place(ev);
     highlight(n);

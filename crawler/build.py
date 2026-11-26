@@ -11,11 +11,12 @@ them down to a notable person -> enrich -> kinship -> JSON.
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from . import academictree_html, http, inspire, kinship, mgp, names, notables, wikidata, wikipedia
+from . import academictree_html, http, inspire, kinship, mgp, names, notables, stem, wikidata, wikipedia
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TYPE_RANK = {"phd": 0, "postdoc": 1, "undergrad": 2, "research": 3}
@@ -476,20 +477,52 @@ def main():
     log("http %s" % http.stats)
 
 
+def _latin(s):
+    import unicodedata
+    return all(not ch.isalpha() or unicodedata.name(ch, "").startswith("LATIN") for ch in s or "")
+
+
+def english_name(current, d):
+    """English display name: Wikidata English label, else the English Wikipedia
+    title (minus any '(physicist)' qualifier), else the current name."""
+    import re
+    if d.get("label_en") and _latin(d["label_en"]):
+        return d["label_en"]
+    if d.get("wikipedia"):
+        t = re.sub(r"\s*\([^)]*\)$", "", wikipedia.title_from_url(d["wikipedia"]))
+        if t:
+            return t
+    if _latin(current):
+        return current
+    for alt in d.get("label_alt", []):  # e.g. the German label
+        if _latin(alt):
+            return alt
+    return current
+
+
 def enrich(recs, cfg):
     qids = [r["qid"] for r in recs.values() if r.get("qid")]
     log("enriching %d Wikidata people" % len(qids))
     wd = wikidata.enrich(qids)
     byq = {r["qid"]: r for r in recs.values() if r.get("qid")}
+    # "Named after them": keep STEM topics only (equations, effects, units,
+    # elements, theorems...), not awards, schools, asteroids or streets.
+    named = {x["qid"] for d in wd.values() for x in d["named_after"]}
+    log("classifying %d named-after items (STEM filter)" % len(named))
+    stem_ok = stem.stem_items(named)
+    for d in wd.values():
+        d["named_after"] = [x for x in d["named_after"]
+                            if x["qid"] in stem_ok and not stem.looks_institutional(x["label"])]
     for q, d in wd.items():
         r = byq[q]
+        r["name"] = english_name(r["name"], d)
         for k in ("description", "birth", "death", "birthplace", "citizenship", "image", "wikipedia",
                   "employers", "fields", "educated"):
             if d.get(k):
                 r[k] = d[k]
         r["known_for"] = d["known_for"]
         na = sorted(d["named_after"], key=lambda x: (not x["wiki"], x["label"] or ""))
-        r["named_after_total"] = len(na)
+        r["named_after_total"] = len(na)  # STEM topics only
         r["named_after"] = na[:40]
         tracked = {p["label"] for p in r["prizes"]}
         others, seen = [], set()
@@ -516,7 +549,7 @@ def enrich(recs, cfg):
             r["thumbnail"] = th[t]
         have = {k["label"].lower() for k in r.get("known_for", []) if k.get("label")}
         for k in kf.get(t, []):
-            if k["label"].lower() not in have:
+            if k["label"].lower() not in have and not re.match(r"(?i)^(full list|list of|see list|more)\b", k["label"]):
                 r.setdefault("known_for", []).append(k)
 
 
