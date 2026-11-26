@@ -1,0 +1,678 @@
+<script language="javascript"  type="text/javascript">
+
+var gPUBID=''; // global placeholder
+
+function getHttpRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('div'+songid).innerHTML = res;
+  }
+}
+
+function ChangeHS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=humanscore&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function ChangePSS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=pubsimscore&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function ChangeSS(pid,pid2,score) {  // This function does the AJAX request
+  gPUBID=pid.toString() + pid2.toString();
+  http.open('GET','pubcommands.php?cmd=simscore&pid='+pid+'&pid2='+pid2+'&score='+score);
+  http.onreadystatechange = getSSRes;
+  http.send(null);
+}
+
+function AddHS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=humanadd&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function getHSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getPSSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getSSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    //document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getXHTTP() {
+  var xhttp;
+   try {   // The following "try" blocks get the XMLHTTP object for various browsers
+      xhttp =
+ new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (e2) {
+            // This block handles Mozilla/Firefox browsers...
+            try {
+              xhttp = new XMLHttpRequest();
+            } catch (e3) {
+              xhttp = false;
+            }
+      }
+    }
+  return xhttp; // Return the XMLHTTP object
+}
+
+var http = getXHTTP(); // This executes when the page first loads.
+
+</script>
+
+
+
+
+
+<TITLE>Physics Tree - Werner  Heisenberg</TITLE>
+
+<!DOCTYPE html>
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0">  -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Physics Tree: mentors, trainees, research areas and affiliations for researcher" />
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="style/normalize.css">
+    <link rel="stylesheet" href="style/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="style/custom.css">
+    <link rel="stylesheet" type="text/css" href="/ui/vendor/jquery-ui.css">
+    <script type="text/javascript" src="/ui/vendor/modernizr.js"></script>
+        <div id="fb-root"></div>
+    <script>(function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.9";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));</script>
+  </head>
+
+
+<style type="text/css">
+A{text-decoration:none; color: #12184a}
+A:visited {text-decoration: none; color: #22285a}A:active {text-decoration: none; color: #e6d406}
+A:hover {color: #e6d406; text-decoration: underline}
+body {background-color: rgb(241, 241, 241); color: #000000;}
+</style>
+                  <div class="modal fade" id="signIN" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                    <div class="modal-dialog" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                                                    <div class="login-choice">
+                            <h4 id="login-modal" class="entrance-selector selected">Log In</h4>
+                            <h4 id="login-sign-up" class="entrance-selector">Sign Up</h4>
+                          </div>
+                                                  </div>
+                        <div class="modal-body">
+        <div class="response" role="alert">
+        </div>
+
+                  <div id="login-modal-container"><p>Log in to add people & connections, or <b><a href="#" class="sign-up-trig trig">click here to create an account</a></b>.</p>
+<form id="logmein" action="process.php" method="POST">
+<input type="text" placeholder="Username" class="text-input text-input-navy text-input-o" name="user" size=20 maxlength="30" value=""></h5> <input type="password" placeholder="Password"class="text-input text-input-navy text-input-o" name="pass" size=20 maxlength="30" value=""></h5>
+<font size="2"><input type="checkbox" name="remember"> Save login </font>
+ <input type="hidden" name="sublogin" value="1">
+<input type="hidden" name="refurl" value="/physics/peopleinfo.php?pid=1932">
+<input type="hidden" name="csrf_token" value="6805eac4dc4135805b5dc33c6150504c2b61e96cc988a24ff02b2467f4c70445">
+ - <font size="2"><a href="forgotpass.php">Forgot password</a></font>
+</div><div id="sign-up-modal-container"><form id="new-acount"><p>Already have an account? Log in <b><a href="#" class="sign-in-trig trig">here.</a></b></p><input type="hidden" name="csrf_token" value="6805eac4dc4135805b5dc33c6150504c2b61e96cc988a24ff02b2467f4c70445">
+<span>Login ID:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE=TEXT NAME="newusername" placeholder="(Visible to the public but not directly linked to your node.)"><span>Password:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE="password" placeholder="password" NAME="passwd" VALUE=""><span>Re-enter:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE="password" placeholder="password again" NAME="passwd2" VALUE=""><span>Email:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE=TEXT NAME="email" placeholder="email"><p>(Don't worry, your e-mail will not be distributed or made public. Its only purpose is for us to contact you about your account.)</p></div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-navy btn-border-o" data-dismiss="modal">Close</button>
+                                                    <button id="login-button" type="submit" class="btn btn-navy btn-border-o">Login</button>
+                          <button id="sign-up-button" onclick="validateNewUser(event)" type="submit" class="btn btn-navy btn-border-o">Sign Up</button>
+                                                  </div>
+                              </form>
+                      </div>
+                    </div>
+                  </div>
+
+    <body id="home">
+     
+        <div class="wrapper">
+         
+            <header>
+             <a id="menuToggle" href="#">☰</a>
+                <a id="logo" href="index.php">Physics Tree</a>            <div id="navigation">
+                <form ACTION="peoplelist.php" id="searchform" role="search"><input type="text" class="text-input text-input-o text-input-navy text_people_top" name="searchname" placeholder="Search" style="  width: 150px; margin: 0;"><input type="hidden" id="check" NAME="searchalltrees" value="1"><input type="hidden" id="pidconn" name="pidconn" value="-1">
+<input type="hidden" id="allfields" name="allfields" value="1">
+<button type="submit" class="btn btn-navy btn-border-o"><img src="./images/search.svg"></button></form><ul><li><a href="tree.php?pid=1932">Tree</a></li><li><a href="peoplelist.php?new=1">Recent Additions</a></li><li><a href="distance.php">Distance</a></li><li><a href="analysis.php">Analysis</a></li><li><a href="faq.php">Help</a></li><li><a href="faq.php#donate" class="btn btn-thin btn-green btn-fill-horz-o" style="padding: 1px 5px;">Donate</a></li><li><a href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign In/Register</a></li>
+
+      
+            </ul>
+            </div>
+            </header>
+
+            <div class="main clearfix">
+<link rel="stylesheet" href="style/print.css" type="text/css" media="print">
+<div class="container cf" > <div class="boxfloat"> <div class="boxinline">
+  <div class="personphoto noprint">
+<img src="/photo/000/cache.001932.Werner_Heisenberg.jpg" class="img-thumbnail img-responsive"> 
+  </div>
+<!-- Begin DIV holding Person Information  -->
+  <div class="personinfo">
+          <h1 style="margin-top:0;">
+                  Werner  Heisenberg  </h1>
+<table border="0" cellspacing="0">
+<tr><td valign="top"><h5 style="margin:0;">Affiliations:&nbsp;</h5></td><td>1927-1942&nbsp;</td><td></td><td><a href="inst.php?locid=7370">Universität Leipzig</a>, Leipzig, Sachsen, Germany&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>1942-1945&nbsp;</td><td></td><td><a href="inst.php?locid=20976">Kaiser Wilhelm-Institut für Physik</a>, Berlin, Prussia, Germany&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>1946-1958&nbsp;</td><td></td><td><a href="inst.php?locid=22883">Max-Planck-Institut für Physik in Göttingen</a>&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>1958-1970&nbsp;</td><td></td><td><a href="inst.php?locid=22885">Max-Planck-Institut für Physik in München</a>&nbsp;</td></tr>
+</table>
+</td></tr>
+                  <h5 style="display: inline-block; margin: 0;">Area:</h5> physics (quantum mechanics)                  <br>
+
+<h5 style="display: inline-block; margin: 0;">Website:</h5> <a href="http://nobelprize.org/physics/laureates/1932/heisenberg-bio.html" target="_blank">http://nobelprize.org/physics/laureates/1932/heisenberg-bio.html</a><br><h5 style="display: inline-block; margin: 0;">Google:</h5> <a href="https://www.google.com/search?hl=en&q=%22Werner+Heisenberg%22" target="_blank">"Werner Heisenberg"</a><br><h5 style="display: inline-block; margin: 0;">Bio:</h5><div><p>(1901 - 1976)<br />
+<a target="_blank" rel="noopener noreferrer" href="https://doi.org/10.1098/rsbm.1977.0009">DOI: 10.1098/rsbm.1977.0009</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://de.wikipedia.org/wiki/Werner_Heisenberg">https://de.wikipedia.org/wiki/Werner_Heisenberg</a><br />
+<a target="_blank" rel="noopener noreferrer" href="http://www.atomicarchive.com/Bios/Heisenberg.shtml">http://www.atomicarchive.com/Bios/Heisenberg.shtml</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://history.aip.org/phn/11710010.html">https://history.aip.org/phn/11710010.html</a><br />
+<a target="_blank" rel="noopener noreferrer" href="http://chemistry.library.nd.edu/resources/genealogy/physics/documents/HeisenbergWK.pdf">http://chemistry.library.nd.edu/resources/genealogy/physics/documents/HeisenbergWK.pdf</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://inspirehep.net/record/1019163?ln=en">https://inspirehep.net/record/1019163?ln=en</a><br />
+<a target="_blank" rel="noopener noreferrer" href="http://adsabs.harvard.edu/abs/1924AnP...379..577H">http://adsabs.harvard.edu/abs/1924AnP...379..577H</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Operation_Epsilon">https://en.wikipedia.org/wiki/Operation_Epsilon</a><br />
+The Nobel Prize in Physics 1932 was awarded to Werner Heisenberg "for the creation of quantum mechanics, the application of which has, </p> ... (<a aria-label="Show expanded bio" href="peopleinfo.php?pid=1932&expand=bio">Show more</a>)</div><table border="0" cellpadding="1" cellspacing="0"><tr><td><h5 style="display: inline-block; margin: 0;"><a href="faq.php#meandist">Mean distance</a>: 
+8.37&nbsp;(<a href="peoplelist.php?new=112">cluster 12</a>)</h5>
+&nbsp;</td><td bgcolor="#006666"><font color="#117070">S</td><td bgcolor="#222299"><font color="#2a2a9d">N</td><td bgcolor="#800606"><font color="#881616">B</td><td bgcolor="#0000FF"><font color="#1111ff">C</td><td bgcolor="#12184a"><font color="#ffffff">P</td></tr></table>
+</div> </div> </div> </div>
+<!-- Construct button container -->
+<div class="container"> <div class="btns noprint">
+<a href="tree.php?pid=1932" class="btn btn-default">Tree</a>
+<a href="publications.php?pid=1932" class="btn btn-default">Publications</a>
+<a href="peoplelist.php?special=sim&specialN=1932" class="btn btn-default">Similar researchers</a> 
+<a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?CMD=search&DB=pubmed&term=Heisenberg%2BW[au]" target="_blank" class="btn btn-default">PubMed</a> <a href="reporterror.php?pid=1932" class="btn btn-default">Report error</a> </div>
+<div class="leftcol">    
+	<div class="boxfloat" ><h4 style="display:inline-block;">Parents</h4>
+<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add mentor</a><!-- Construct Parent Connection Container -->
+	<div class="container" style="display:inline">
+		<!-- Construct Parent Connection UL -->
+		<table class="connection_list">
+<tr style="border-bottom-style: none;text-align:left">
+  <td><a href="peopleinfo.php?pid=3211">Arnold&nbsp;Johannes Wilhelm Sommerfeld</a></td>
+  <td>grad student</td>
+  <td>1923</td>
+  <td><a href="peoplelist.php?searchinst=Ludwig-Maximilians-Universität München">Universität München</a></td>
+</tr>
+<tr style="border-top-style: none;"><td colspan=5>&nbsp;(Über Stabilität und Turbulenz von Flüssigkeitsströmen)</td></tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=1827">David Hilbert</a></td>
+  <td>post-doc</td>
+  <td>1923</td>
+  <td><a href="peoplelist.php?searchinst=Georg-August-Universität Göttingen">Universität Göttingen</a></td>
+</tr>
+<tr style="border-bottom-style: none;text-align:left">
+  <td><a href="peopleinfo.php?pid=1942">Max Born</a></td>
+  <td>post-doc</td>
+  <td>1924</td>
+  <td><a href="peoplelist.php?searchinst=Georg-August-Universität Göttingen">Universität Göttingen</a></td>
+</tr>
+<tr style="border-top-style: none;"><td colspan=5>&nbsp;(Habilitation)</td></tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=1943">Niels Bohr</a></td>
+  <td>post-doc</td>
+  <td>1924-1925</td>
+  <td><a href="peoplelist.php?searchinst=Københavns Universitet">Københavns Universitet</a></td>
+</tr>
+		</tbody>
+		</table>      
+	</div>
+	</div>
+
+	<!-- Construct Child Connection Container -->
+	<div class="boxfloat"><h4 style="display:inline-block;">Children</h4>
+<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add trainee</a>	<div class="container" style="display:inline;">
+		<table class='connection_list'>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=91742">Guido  Beck</a></td>
+  <td>research assistant</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=16600">Rudolf&nbsp;Ernst Peierls</a></td>
+  <td>research assistant</td>
+  <td>1928-1929</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="https://academictree.org/astronomy/peopleinfo.php?pid=936087">Gerhard Börner</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst="></a> (Astronomy Tree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=677380">Jochen&nbsp;H. Heisenberg</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst="></a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=826389">Herman&nbsp;Arthur Jahn</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst="></a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=824567">Hans Kastrup</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=Ludwig Maximilian University Munich">Ludwig Maximilian University Munich</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=833369">Karl&nbsp;Otto Ott</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=Georg-August-Universität Göttingen">Universität Göttingen</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=52643">Felix Bloch</a></td>
+  <td>grad student</td>
+  <td>1928</td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=59696">Edward Teller</a></td>
+  <td>grad student</td>
+  <td>1930</td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=397498">Carl Friedrich von Weizsäcker</a></td>
+  <td>grad student</td>
+  <td>1933</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=842849">Arnold&nbsp;Johannes Friedrich Siegert</a></td>
+  <td>grad student</td>
+  <td>1934</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=663974">Serban Titeica</a></td>
+  <td>grad student</td>
+  <td>1934</td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=645133">Hugo&nbsp;F. Neuert</a></td>
+  <td>grad student</td>
+  <td>1935</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=71121">Bernhard Kockel</a></td>
+  <td>grad student</td>
+  <td>1936</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=88910">Erich Bagge</a></td>
+  <td>grad student</td>
+  <td>1938</td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=743320">Mario Verde</a></td>
+  <td>grad student</td>
+  <td>1942</td>
+  <td><a href="peoplelist.php?searchinst="></a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=677032">Otfried Madelung</a></td>
+  <td>grad student</td>
+  <td>1950</td>
+  <td><a href="peoplelist.php?searchinst=Goethe-Universität Frankfurt am Main">Goethe-Universität Frankfurt</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=841183">Reinhard Oehme</a></td>
+  <td>grad student</td>
+  <td>1951</td>
+  <td><a href="peoplelist.php?searchinst=Georg-August-Universität Göttingen">Universität Göttingen</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=60146">Richard&nbsp;J. Eden</a></td>
+  <td>grad student</td>
+  <td>1948-1951</td>
+  <td><a href="peoplelist.php?searchinst=University of Cambridge">Cambridge</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=837253">Werner Güttinger</a></td>
+  <td>grad student</td>
+  <td>1953</td>
+  <td><a href="peoplelist.php?searchinst=Eberhard Karls Universität Tübingen">Universität Tübingen</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=687553">Peter Mittelstaedt</a></td>
+  <td>grad student</td>
+  <td>1956</td>
+  <td><a href="peoplelist.php?searchinst=Georg-August-Universität Göttingen">Universität Göttingen</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=72834">Siegfried Flügge</a></td>
+  <td>post-doc</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=748873">Ramesh&nbsp;Chandra Majumdar</a></td>
+  <td>post-doc</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst="></a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=118670">Herbert Wagner</a></td>
+  <td>post-doc</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=938387">Alan&nbsp;Herries Wilson</a></td>
+  <td>post-doc</td>
+  <td>1931-</td>
+  <td><a href="peoplelist.php?searchinst=University of Leipzig">University of Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=69307">William&nbsp;Vermillion Houston</a></td>
+  <td>post-doc</td>
+  <td>1927</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=527">Haldan&nbsp;Keffer Hartline</a></td>
+  <td>post-doc</td>
+  <td>1929-1929</td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=149953">Otto Halpern</a></td>
+  <td>post-doc</td>
+  <td>1928-1930</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="https://academictree.org/chemistry/peopleinfo.php?pid=52698">Erich Hückel</a></td>
+  <td>post-doc</td>
+  <td>1929-1930</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a> (Chemistry Tree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=169048">Eugene Guth</a></td>
+  <td>post-doc</td>
+  <td>1931</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=26450">Victor&nbsp;Frederick Weisskopf</a></td>
+  <td>post-doc</td>
+  <td>1931</td>
+  <td><a href="peoplelist.php?searchinst=Leipzig University">Leipzig University</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=825315">Gian-Carlo Wick</a></td>
+  <td>post-doc</td>
+  <td>1931</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=833870">George Placzek</a></td>
+  <td>post-doc</td>
+  <td>1930-1931</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=205881">Theodor Schmidt</a></td>
+  <td>post-doc</td>
+  <td>1934</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=83983">Edwin&nbsp;Albrecht Uehling</a></td>
+  <td>post-doc</td>
+  <td>1933-1934</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=52612">Arnold&nbsp;Theodore Nordsieck</a></td>
+  <td>post-doc</td>
+  <td>1935-1937</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=285325">Ugo Fano</a></td>
+  <td>post-doc</td>
+  <td>1936-1937</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=49875">Sin-Itiro Tomonaga</a></td>
+  <td>post-doc</td>
+  <td>1937-1939</td>
+  <td><a href="peoplelist.php?searchinst=Universität Leipzig">Universität Leipzig</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=443656">Bruno Zumino</a></td>
+  <td>post-doc</td>
+  <td>1949-1951</td>
+  <td><a href="peoplelist.php?searchinst=Max-Planck-Institut für Physik in Göttingen">Max-Planck-Institut für Physik in Göttingen</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=90721">Gernot Eder</a></td>
+  <td>post-doc</td>
+  <td>1953-1955</td>
+  <td><a href="peoplelist.php?searchinst=Max-Planck-Institut für Physik">Max-Planck-Institut für Physik</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=192054">Tullio Regge</a></td>
+  <td>post-doc</td>
+  <td>1958-1959</td>
+  <td><a href="peoplelist.php?searchinst=Max-Planck-Institut für Physik in München">Max-Planck-Institut für Physik in München</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=67101">Wilhelm Brenig</a></td>
+  <td>post-doc</td>
+  <td>1961</td>
+  <td><a href="peoplelist.php?searchinst=University of Munich">University of Munich</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="https://academictree.org/philosophy/peopleinfo.php?pid=921750">Patrick&nbsp;Aidan Heelan</a></td>
+  <td>research scientist</td>
+  <td>1965-</td>
+  <td><a href="peoplelist.php?searchinst=Max Planck Institute for Physics and Astrophysics (Heisenberg Institute)">Max Planck Institute for Physics and Astrophysics (Heisenberg Institute)</a> (Philosophy Tree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=791593">Karl&nbsp;Eugen Julius Wirtz</a></td>
+  <td>research scientist</td>
+  <td>1937-1944</td>
+  <td><a href="peoplelist.php?searchinst=Kaiser Wilhelm-Institut für Physik">Kaiser Wilhelm-Institut für Physik</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=824191">Juan&nbsp;G. Roederer</a></td>
+  <td>research scientist</td>
+  <td>1953-1955</td>
+  <td><a href="peoplelist.php?searchinst=Max-Planck-Institut für Physik in München">Max-Planck-Institut für Physik in München</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=496743">Erich&nbsp;W. Schmid</a></td>
+  <td>research scientist</td>
+  <td>1965</td>
+  <td><a href="peoplelist.php?searchinst=Max-Planck-Institut für Physik in München">Max-Planck-Institut für Physik in München</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="https://academictree.org/chemistry/peopleinfo.php?pid=71036">Heinzwerner Preuß</a></td>
+  <td>research scientist</td>
+  <td>1952-1969</td>
+  <td><a href="peoplelist.php?searchinst=Max-Planck-Institut für Physik in Göttingen">Max-Planck-Institut für Physik in Göttingen</a> (Chemistry Tree)</td>
+</tr>
+		</tbody>
+		</table> 
+	</div>
+	</div>     
+
+	<!-- Construct Collaborator Connection Container -->
+	<div class="boxfloat" ><h4 style="display:inline-block;">Collaborators</h4>
+		<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add collaborator</a>
+
+	<div class="container" style="display:inline;">
+		<table class="connection_list">
+				</tbody>
+		</table> 
+	</div>
+	</div>   
+
+	
+      </div>
+         <div class="rightcol movepubdown">
+      <div class="boxfloat" style="padding-top:5px; padding-bottom:5px; padding-left:20px; padding-right:20px;"> 
+        <a href="publications.php?pid=1932&special=sim" class="btn btn-default" style="font-size: 10px; padding: 3px 5px;" rel="nofollow">BETA: Related publications</a>
+   <h4>Publications</h4>
+   <div class="container" style="display:table; width:100%; font-size:8px;">
+    <table class="table table-condensed table-striped table-responsive table-hover" style="font-size:1.2em;margin-bottom: 2px;">
+    <tr><td>
+          <p>You can help our author matching system! If you notice any publications incorrectly attributed to this author, please
+      <a href="#" data-toggle="modal" data-target="#signIN">sign in</a> and mark matches as correct or incorrect.</p>
+        </td></tr>
+
+      <tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W. (<b>2016</b>) What we observe is not nature itself, but nature exposed to our method of questioning <em>Springer Series in Materials Science</em>. 232: 131-147</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg WK. (<b>2008</b>) Abstraction in modern science <em>Lecture Notes in Physics</em>. 746: 1-16</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W, Cassidy D, Sweet W. (<b>1995</b>) A Lecture on Bomb Physics: February 1942 <em>Physics Today</em>. 48: 27-30</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W. (<b>1985</b>) On the theory of statistical and isotropic turbulence <em>Proceedings of the Royal Society a: Mathematical, Physical and Engineering Sciences</em>. 195: 402-406</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W. (<b>1976</b>) The nature of elementary particles <em>Physics Today</em>. 29: 32-39</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W. (<b>1976</b>) Was ist ein elementarteilchen? <em>Die Naturwissenschaften</em>. 63: 1-7</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W. (<b>1976</b>) Cosmic radiation and fundamental problems in physics <em>Naturwissenschaften</em>. 63: 63-67</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W. (<b>1976</b>) The nature of the 'elementary particles' | WAS IST EIN ELEMENTARTEILCHEN? <em>Naturwissenschaften</em>. 63: 1-7</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W. (<b>1975</b>) Development of concepts in the history of quantum theory <em>American Journal of Physics</em>. 43: 389-394</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=1932"  style="font-size: 12px;">Heisenberg W, Heelan PA. (<b>1975</b>) Comments to Heelans thesis <em>Journal For General Philosophy of Science - Zeitschrift FüR Allgemeine Wissenschaftstheorie</em>. 6: 137-138</td></tr>      				</table>
+      				<a href="publications.php?pid=1932">See more...</a>      			</div>
+      		</div>
+      	</div>
+      	<div class="loading-clock"></div>
+      	      	  </div>
+  </div><!-- /main -->
+  </div> <!-- /wrapper -->
+
+
+  <footer>
+  <div class="footer-container">
+
+      <div class="footer-bottom">
+
+      Added by: hanks (2005-11-09 17:02:30) - 
+
+Is someone missing from the tree? <a href="#" data-toggle="modal" data-target="#signIN">Register/sign in</a> to make changes.<br>
+<img src="https://neurotree.org/sess_align.php?w=PHPSESSID&x=c8l3738kq4vtervcopiotttj1k"/>Question? Ideas? Want to start a new tree? Contact <em>admin at neurotree.org</em>
+ - <a href="reporterror.php?pid=1932&refurl=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D1932">Report bug/error</a><br>&copy;2005-2026 The Academic Family Tree - <a href="faq.php#license">Data licensed for re-use with attribution to this site (CC-BY 3.0).</a>
+<span style="position: absolute; right: 0;">
+<iframe src="https://platform.twitter.com/widgets/tweet_button.html?size=s&url=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D1932text=Academic Family Tree&hashtags=academictree" width="60" height="25" size="small" scrolling="no" title="" style="border: 0; overflow: hidden;"></iframe>
+<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D1932&layout=button&size=small&mobile_iframe=true&width=60&height=25&appId" width="60" height="25" style="border:none;overflow:hidden;" scrolling="no" frameborder="0" allowTransparency="true"></iframe>
+</span>
+</div>
+            </div>
+            </footer>
+    <script type="text/javascript" src="/ui/vendor/jquery.js"></script>
+    <script type="text/javascript" src="/ui/vendor/jquery-ui.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="/ui/vendor/jquery.ui.autocomplete.html.js" type="text/javascript"></script>
+    <script type="text/javascript" src="/ui/aComplete.js"></script>
+    <script type="text/javascript" src="/ui/vendor/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/ui/submital.js" type="text/javascript"></script>
+    <script>
+          /* added 2026-05-13: expose CSRF token for AJAX calls */
+          var csrfToken = "6805eac4dc4135805b5dc33c6150504c2b61e96cc988a24ff02b2467f4c70445";
+          /* end added 2026-05-13 */
+          $( "#sign-in" ).click(function() {
+          $( ".login-container" ).toggle("fast");
+          });
+          $( "#sign-in2" ).click(function() {
+          $( ".login-container" ).toggle("fast");
+          });
+          $(document).ready(function() {  
+  //navigation toggle
+  var menuToggle = $("#menuToggle");
+  var menu = $("#navigation");
+  var menuItem = $("#navigation ul li");
+  
+  menuToggle.click(function() {
+    menu.toggleClass("active");
+  });
+  
+  menuItem.click(function() {
+    menu.removeClass("active");
+    menuItem.removeClass("current-page");
+    $(this).addClass("current-page");
+  });
+
+	h=$('.wrapper').height();
+	//console.log(h);
+	hwrap = h-78;
+	$('.wrapper').css('min-height',hwrap);
+
+
+// login js
+
+$('.sign-in-trig').click(function() {
+  $('#login-modal').addClass('selected');
+  $('#login-modal-container').css('display','block');
+  $('#login-button').css('display','inline-block');
+  $('#login-sign-up').removeClass('selected');
+  $('.response').html("");
+  $('#sign-up-modal-container').css('display','none');
+  $('#sign-up-button').css('display','none');
+});
+
+$('.sign-up-trig').click(function() {
+  $('#login-sign-up').addClass('selected');
+  $('#sign-up-modal-container').css('display','block');
+  $('#sign-up-button').css('display','inline-block');
+  $('#login-modal').removeClass('selected');
+  $('#login-modal-container').css('display','none');
+  $('.response').html("");
+  $('#login-button').css('display','none');
+});
+
+});
+
+  $(window).resize(function() {
+  
+	h=$('.wrapper').height();
+	console.log('wrapper' + h);
+	w=$(window).height();
+	console.log('widow' + w);
+	hwrap = w-84;
+	$('.wrapper').css('min-height',hwrap);
+});
+
+</script>
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1f2d5326a6054556bb10c6140b38074a","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-61671548-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-61671548-1');
+</script>
+<!--
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61671548-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+-->
+
+      	<script>
+
+
+
+      		jQuery(document).ready(function($) {
+      			$(".clickable-row").click(function() {
+      				window.document.location = $(this).data("href");
+      			});
+      			$('.clickable-row').hover(function() {
+      				$(this).css('cursor','pointer');
+      			});
+
+
+      			$('.alert').hide();
+      			$(".close").click(function() {
+      				$('.alert').hide();
+      			});
+
+      			$('.cancel').click(function() {
+      				$('.response').hide();
+      			});
+
+			$('.modal').on('hidden.bs.modal', function () {
+			$('.response').hide();
+})	
+
+      			$(document).keyup(function(e) {
+		     if (e.keyCode == 27) { // escape key maps to keycode `27`
+		     	$('.alert').hide();
+		     }
+		   });
+
+
+      		});
+      	</script>
+
+

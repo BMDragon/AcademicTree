@@ -27,8 +27,18 @@ def key(name):
     return (t[-1], t[0][0] if len(t) > 1 else "")
 
 
+def given_initials(name):
+    t = [x for x in tokens(name) if x not in PARTICLES]
+    return {x[0] for x in t[:-1]}
+
+
 def same_person(a, b):
+    """Same surname, and the first given name of one matches (by initial) any
+    given name of the other: "Gustav Dirichlet" ~ "Johann Peter Gustav Lejeune
+    Dirichlet", "Barish, Barry C." ~ "Barry Clark Barish"."""
     ka, kb = key(a), key(b)
     if not ka or not kb or ka[0] != kb[0]:
         return False
-    return not ka[1] or not kb[1] or ka[1] == kb[1]
+    if not ka[1] or not kb[1]:
+        return True
+    return ka[1] in given_initials(b) or kb[1] in given_initials(a)

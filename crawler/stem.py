@@ -11,7 +11,7 @@ Root QIDs were resolved from their English labels.
 """
 import re
 
-from . import wikidata
+from . import itemcache, wikidata
 
 STEM_ROOTS = {
     "Q246672": "mathematical object", "Q24034552": "mathematical concept", "Q65943": "theorem",
@@ -86,11 +86,24 @@ def looks_institutional(label):
     return bool(INSTITUTION_WORDS.search(label or ""))
 
 
-def stem_items(qids):
-    qids = {q for q in qids if q.startswith("Q")}  # drop lexemes (L…) and the like
-    if not qids:
-        return set()
+def _stem_fetch(qids):
+    qids = set(qids)
     theoretical = _reaching(qids, OVERRIDE_ROOTS)
     excluded = _reaching(qids, EXCLUDE_ROOTS) - theoretical
     cand = qids - excluded
-    return (_reaching(cand, STEM_ROOTS) | _bare_concepts(cand) | theoretical) if cand else set()
+    ok = (_reaching(cand, STEM_ROOTS) | _bare_concepts(cand) | theoretical) if cand else set()
+    return {q: (q in ok) for q in qids}
+
+
+def _rules_version():
+    import hashlib
+    blob = repr((sorted(STEM_ROOTS), sorted(EXCLUDE_ROOTS), sorted(OVERRIDE_ROOTS)))
+    return hashlib.sha1(blob.encode()).hexdigest()[:10]
+
+
+def stem_items(qids):
+    """Set of QIDs that are STEM topics. Cached per item; the cache namespace
+    changes whenever the root lists change, so edits take effect."""
+    qids = [q for q in set(qids) if q.startswith("Q")]  # drop lexemes (L…) and the like
+    got = itemcache.batched("stem." + _rules_version(), qids, _stem_fetch)
+    return {q for q, ok in got.items() if ok}

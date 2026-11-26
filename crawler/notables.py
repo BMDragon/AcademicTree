@@ -2,7 +2,7 @@
 import re
 import urllib.parse
 
-from . import http, wikidata
+from . import http, itemcache, wikidata
 
 QB_FREQ = "https://www.qbreader.org/api/frequency-list"
 # Occupations that make a QB answerline "a scientist" (subclass closure is used).
@@ -64,16 +64,21 @@ def quizbowl_answers(cfg, log=print):
             if ans not in seen.setdefault(q, set()):
                 seen[q].add(ans)
                 counts[q] = counts.get(q, 0) + c
-    sci = set()
     cand = sorted(counts)
-    for i in range(0, len(cand), 150):
-        chunk = cand[i:i + 150]
+    sci = itemcache.batched("qb.isscientist.v1", cand, _scientist_fetch)
+    return {q: counts[q] for q in cand if sci.get(q)}
+
+
+def _scientist_fetch(qids):
+    out = {}
+    for i in range(0, len(qids), 150):
+        chunk = qids[i:i + 150]
         rows = wikidata.sparql("""
 SELECT DISTINCT ?p WHERE { VALUES ?p { %s } VALUES ?occ { %s }
   ?p wdt:P106/wdt:P279* ?occ . }""" % (" ".join("wd:" + q for q in chunk),
                                      " ".join("wd:" + o for o in SCI_OCCUPATIONS)))
-        sci.update(wikidata.qid(r["p"]) for r in rows)
-    return {q: counts[q] for q in cand if q in sci}
+        out.update({wikidata.qid(r["p"]): True for r in rows})
+    return {q: out.get(q, False) for q in qids}
 
 
 def name_variants(name):
@@ -90,10 +95,13 @@ def name_variants(name):
     return out
 
 
-def mentions(name, category="Science"):
-    """Number of QB questions (tossups + bonuses) whose text contains the name."""
+def mentions(name, category="Science", ambiguous=frozenset()):
+    """Number of QB questions (tossups + bonuses) whose text contains the name.
+    Shortened variants listed in `ambiguous` (shared by several people) are skipped."""
     best = 0
-    for v in name_variants(name):
+    for i, v in enumerate(name_variants(name)):
+        if i > 0 and v in ambiguous:
+            continue
         q = urllib.parse.urlencode({"queryString": v, "searchType": "question", "categories": category,
                                     "exactPhrase": "true", "maxReturnLength": 1})
         js = http.get_json(QB_QUERY + "?" + q)
@@ -102,10 +110,23 @@ def mentions(name, category="Science"):
     return best
 
 
+def ambiguous_short_names(names):
+    """Shortened 'First Last' variants that more than one notable person (enwiki
+    article) carries as a label or alias, e.g. 'Robert Wilson'."""
+    shorts = {v for n in names for v in name_variants(n)[1:]}
+    if not shorts:
+        return set()
+    hits = wikidata.humans_by_label(shorts)
+    return {s for s in shorts if len(hits.get(s, [])) != 1}
+
+
 def mentions_many(names, category="Science", log=print):
     """{key: mentions} for {key: name}."""
     from concurrent.futures import ThreadPoolExecutor
     keys = sorted(names)
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        vals = list(pool.map(lambda k: mentions(names[k], category), keys))
+    amb = frozenset(ambiguous_short_names(names.values()))
+    # QB Reader allows ~20 requests/s; config paces us at ~12/s, with enough
+    # threads in flight to keep that pace given ~0.4 s latency.
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        vals = list(pool.map(lambda k: mentions(names[k], category, amb), keys))
     return dict(zip(keys, vals))

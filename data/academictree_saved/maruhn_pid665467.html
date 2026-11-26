@@ -1,0 +1,415 @@
+<script language="javascript"  type="text/javascript">
+
+var gPUBID=''; // global placeholder
+
+function getHttpRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('div'+songid).innerHTML = res;
+  }
+}
+
+function ChangeHS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=humanscore&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function ChangePSS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=pubsimscore&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function ChangeSS(pid,pid2,score) {  // This function does the AJAX request
+  gPUBID=pid.toString() + pid2.toString();
+  http.open('GET','pubcommands.php?cmd=simscore&pid='+pid+'&pid2='+pid2+'&score='+score);
+  http.onreadystatechange = getSSRes;
+  http.send(null);
+}
+
+function AddHS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=humanadd&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function getHSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getPSSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getSSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    //document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getXHTTP() {
+  var xhttp;
+   try {   // The following "try" blocks get the XMLHTTP object for various browsers
+      xhttp =
+ new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (e2) {
+            // This block handles Mozilla/Firefox browsers...
+            try {
+              xhttp = new XMLHttpRequest();
+            } catch (e3) {
+              xhttp = false;
+            }
+      }
+    }
+  return xhttp; // Return the XMLHTTP object
+}
+
+var http = getXHTTP(); // This executes when the page first loads.
+
+</script>
+
+
+
+
+
+<TITLE>Physics Tree - Joachim Alexander Maruhn</TITLE>
+
+<!DOCTYPE html>
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0">  -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Physics Tree: mentors, trainees, research areas and affiliations for researcher" />
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="style/normalize.css">
+    <link rel="stylesheet" href="style/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="style/custom.css">
+    <link rel="stylesheet" type="text/css" href="/ui/vendor/jquery-ui.css">
+    <script type="text/javascript" src="/ui/vendor/modernizr.js"></script>
+        <div id="fb-root"></div>
+    <script>(function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.9";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));</script>
+  </head>
+
+
+<style type="text/css">
+A{text-decoration:none; color: #12184a}
+A:visited {text-decoration: none; color: #22285a}A:active {text-decoration: none; color: #e6d406}
+A:hover {color: #e6d406; text-decoration: underline}
+body {background-color: rgb(241, 241, 241); color: #000000;}
+</style>
+                  <div class="modal fade" id="signIN" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                    <div class="modal-dialog" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                                                    <div class="login-choice">
+                            <h4 id="login-modal" class="entrance-selector selected">Log In</h4>
+                            <h4 id="login-sign-up" class="entrance-selector">Sign Up</h4>
+                          </div>
+                                                  </div>
+                        <div class="modal-body">
+        <div class="response" role="alert">
+        </div>
+
+                  <div id="login-modal-container"><p>Log in to add people & connections, or <b><a href="#" class="sign-up-trig trig">click here to create an account</a></b>.</p>
+<form id="logmein" action="process.php" method="POST">
+<input type="text" placeholder="Username" class="text-input text-input-navy text-input-o" name="user" size=20 maxlength="30" value=""></h5> <input type="password" placeholder="Password"class="text-input text-input-navy text-input-o" name="pass" size=20 maxlength="30" value=""></h5>
+<font size="2"><input type="checkbox" name="remember"> Save login </font>
+ <input type="hidden" name="sublogin" value="1">
+<input type="hidden" name="refurl" value="/physics/peopleinfo.php?pid=665467">
+<input type="hidden" name="csrf_token" value="6805eac4dc4135805b5dc33c6150504c2b61e96cc988a24ff02b2467f4c70445">
+ - <font size="2"><a href="forgotpass.php">Forgot password</a></font>
+</div><div id="sign-up-modal-container"><form id="new-acount"><p>Already have an account? Log in <b><a href="#" class="sign-in-trig trig">here.</a></b></p><input type="hidden" name="csrf_token" value="6805eac4dc4135805b5dc33c6150504c2b61e96cc988a24ff02b2467f4c70445">
+<span>Login ID:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE=TEXT NAME="newusername" placeholder="(Visible to the public but not directly linked to your node.)"><span>Password:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE="password" placeholder="password" NAME="passwd" VALUE=""><span>Re-enter:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE="password" placeholder="password again" NAME="passwd2" VALUE=""><span>Email:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE=TEXT NAME="email" placeholder="email"><p>(Don't worry, your e-mail will not be distributed or made public. Its only purpose is for us to contact you about your account.)</p></div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-navy btn-border-o" data-dismiss="modal">Close</button>
+                                                    <button id="login-button" type="submit" class="btn btn-navy btn-border-o">Login</button>
+                          <button id="sign-up-button" onclick="validateNewUser(event)" type="submit" class="btn btn-navy btn-border-o">Sign Up</button>
+                                                  </div>
+                              </form>
+                      </div>
+                    </div>
+                  </div>
+
+    <body id="home">
+     
+        <div class="wrapper">
+         
+            <header>
+             <a id="menuToggle" href="#">☰</a>
+                <a id="logo" href="index.php">Physics Tree</a>            <div id="navigation">
+                <form ACTION="peoplelist.php" id="searchform" role="search"><input type="text" class="text-input text-input-o text-input-navy text_people_top" name="searchname" placeholder="Search" style="  width: 150px; margin: 0;"><input type="hidden" id="check" NAME="searchalltrees" value="1"><input type="hidden" id="pidconn" name="pidconn" value="-1">
+<input type="hidden" id="allfields" name="allfields" value="1">
+<button type="submit" class="btn btn-navy btn-border-o"><img src="./images/search.svg"></button></form><ul><li><a href="tree.php?pid=665467">Tree</a></li><li><a href="peoplelist.php?new=1">Recent Additions</a></li><li><a href="distance.php">Distance</a></li><li><a href="analysis.php">Analysis</a></li><li><a href="faq.php">Help</a></li><li><a href="faq.php#donate" class="btn btn-thin btn-green btn-fill-horz-o" style="padding: 1px 5px;">Donate</a></li><li><a href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign In/Register</a></li>
+
+      
+            </ul>
+            </div>
+            </header>
+
+            <div class="main clearfix">
+<link rel="stylesheet" href="style/print.css" type="text/css" media="print">
+<div class="container cf" > <div class="boxfloat"> <div class="boxinline">
+<!-- Begin DIV holding Person Information  -->
+  <div class="personinfo">
+          <h1 style="margin-top:0;">
+                  Joachim Alexander Maruhn  </h1>
+<table border="0" cellspacing="0">
+<tr><td valign="top"><h5 style="margin:0;">Affiliations:&nbsp;</h5></td><td>1973&nbsp;</td><td></td><td><a href="inst.php?locid=2041">Goethe-Universität Frankfurt am Main</a>, Frankfurt am Main, Hessen, Germany&nbsp;</td></tr>
+</table>
+</td></tr>
+<h5 style="display: inline-block; margin: 0;">Google:</h5> <a href="https://www.google.com/search?hl=en&q=%22Joachim+Maruhn%22" target="_blank">"Joachim Maruhn"</a><br><h5 style="display: inline-block; margin: 0;">Bio:</h5><div><p><a target="_blank" rel="noopener noreferrer" href="https://inspirehep.net/record/998550?ln=en">https://inspirehep.net/record/998550?ln=en</a><br />
+<a target="_blank" rel="noopener noreferrer" href="http://th.physik.uni-frankfurt.de/~xmas/alumni/wgdoktor.html">http://th.physik.uni-frankfurt.de/~xmas/alumni/wgdoktor.html</a></p></div><tr><td><h5 style="display: inline-block; margin: 0;"><a href="faq.php#meandist">Mean distance</a>: 
+(not calculated yet)</h5>
+&nbsp;</td>
+</div> </div> </div> </div>
+<!-- Construct button container -->
+<div class="container"> <div class="btns noprint">
+<a href="tree.php?pid=665467" class="btn btn-default">Tree</a>
+<a href="publications.php?pid=665467" class="btn btn-default">Publications</a>
+<a href="peoplelist.php?special=sim&specialN=665467" class="btn btn-default">Similar researchers</a> 
+<a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?CMD=search&DB=pubmed&term=Maruhn%2BJA[au]" target="_blank" class="btn btn-default">PubMed</a> <a href="reporterror.php?pid=665467" class="btn btn-default">Report error</a> </div>
+<div class="leftcol">    
+	<div class="boxfloat" ><h4 style="display:inline-block;">Parents</h4>
+<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add mentor</a><!-- Construct Parent Connection Container -->
+	<div class="container" style="display:inline">
+		<!-- Construct Parent Connection UL -->
+		<table class="connection_list">
+<tr style="border-bottom-style: none;text-align:left">
+  <td><a href="peopleinfo.php?pid=72836">Walter Greiner</a></td>
+  <td>grad student</td>
+  <td>1973</td>
+  <td><a href="peoplelist.php?searchinst=Goethe-Universität Frankfurt am Main">Goethe-Universität Frankfurt</a></td>
+</tr>
+<tr style="border-top-style: none;"><td colspan=5>&nbsp;(Dynamische Behandlung der Massenasymmetrie in der Kernspaltung mit Hilfe des Zweizentren-Schalenmodells.)</td></tr>
+		</tbody>
+		</table>      
+	</div>
+	</div>
+
+	<!-- Construct Child Connection Container -->
+	<div class="boxfloat"><h4 style="display:inline-block;">Children</h4>
+<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add trainee</a>	<div class="container" style="display:inline;">
+		<table class='connection_list'>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=665464">Horst Stöcker</a></td>
+  <td>grad student</td>
+  <td>1979</td>
+  <td><a href="peoplelist.php?searchinst=Goethe-Universität Frankfurt am Main">Goethe-Universität Frankfurt</a></td>
+</tr>
+		</tbody>
+		</table> 
+	</div>
+	</div>     
+
+	<!-- Construct Collaborator Connection Container -->
+	<div class="boxfloat" ><h4 style="display:inline-block;">Collaborators</h4>
+		<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add collaborator</a>
+
+	<div class="container" style="display:inline;">
+		<table class="connection_list">
+				</tbody>
+		</table> 
+	</div>
+	</div>   
+
+	
+      </div>
+         <div class="rightcol movepubdown">
+      <div class="boxfloat" style="padding-top:5px; padding-bottom:5px; padding-left:20px; padding-right:20px;"> 
+        <a href="publications.php?pid=665467&special=sim" class="btn btn-default" style="font-size: 10px; padding: 3px 5px;" rel="nofollow">BETA: Related publications</a>
+   <h4>Publications</h4>
+   <div class="container" style="display:table; width:100%; font-size:8px;">
+    <table class="table table-condensed table-striped table-responsive table-hover" style="font-size:1.2em;margin-bottom: 2px;">
+    <tr><td>
+          <p>You can help our author matching system! If you notice any publications incorrectly attributed to this author, please
+      <a href="#" data-toggle="modal" data-target="#signIN">sign in</a> and mark matches as correct or incorrect.</p>
+        </td></tr>
+
+      <tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Reinhard P-, Schuetrumpf B, Maruhn JA. (<b>2020</b>) The Axial Hartree–Fock + BCS Code SkyAx <em>Computer Physics Communications</em>. 107603</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Tahir NA, Hoffmann DH, Kozyreva A, et al. (<b>2019</b>) Equation-of-state properties of high-energy-density matter using intense heavy ion beams with an annular focal spot <em>Physical Review. E, Statistical Physics, Plasmas, Fluids, and Related Interdisciplinary Topics</em>. 62: 1224-33</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Tahir NA, Hoffmann DH, Kozyreva A, et al. (<b>2019</b>) Shock compression of condensed matter using intense beams of energetic heavy ions <em>Physical Review. E, Statistical Physics, Plasmas, Fluids, and Related Interdisciplinary Topics</em>. 61: 1975-80</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Ren Z, Zhang S, Zhao P, et al. (<b>2019</b>) Stability of the linear chain structure for$^{12}$C in covariant density functional theory on a 3D lattice <em>Science China-Physics Mechanics & Astronomy</em>. 62: 112062</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Schuetrumpf B, Reinhard P-, Stevenson PD, et al. (<b>2018</b>) The TDHF code Sky3D version 1.1 <em>Computer Physics Communications</em>. 229: 211-213</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Ishizuka C, Usang MD, Ivanyuk FA, et al. (<b>2017</b>) Four-dimensional Langevin approach to low-energy nuclear fission of 236 U <em>Physical Review C</em>. 96: 64616</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Stein M, Maruhn J, Sedrakian A, et al. (<b>2016</b>) Carbon-oxygen-neon mass nuclei in superstrong magnetic fields <em>Physical Review C</em>. 94: 35802</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Reinhard PG, Umar AS, Stevenson PD, et al. (<b>2016</b>) Sensitivity of the fusion cross section to the density dependence of the symmetry energy <em>Physical Review C - Nuclear Physics</em>. 93</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Jiang X, Maruhn JA, Yan SW. (<b>2015</b>) Configuration transition effect in heavy-ion fusion reactions with deformed nuclei <em>Epl</em>. 112: 12001</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=665467"  style="font-size: 12px;">Umar AS, Oberacker VE, Horowitz CJ, et al. (<b>2015</b>) Swelling of nuclei embedded in neutron-gas and consequences for fusion <em>Physical Review C</em>. 92</td></tr>      				</table>
+      				<a href="publications.php?pid=665467">See more...</a>      			</div>
+      		</div>
+      	</div>
+      	<div class="loading-clock"></div>
+      	      	  </div>
+  </div><!-- /main -->
+  </div> <!-- /wrapper -->
+
+
+  <footer>
+  <div class="footer-container">
+
+      <div class="footer-bottom">
+
+      Added by: jandh (2016-07-18 11:36:28) - 
+
+Is someone missing from the tree? <a href="#" data-toggle="modal" data-target="#signIN">Register/sign in</a> to make changes.<br>
+<img src="https://neurotree.org/sess_align.php?w=PHPSESSID&x=c8l3738kq4vtervcopiotttj1k"/>Question? Ideas? Want to start a new tree? Contact <em>admin at neurotree.org</em>
+ - <a href="reporterror.php?pid=665467&refurl=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D665467">Report bug/error</a><br>&copy;2005-2026 The Academic Family Tree - <a href="faq.php#license">Data licensed for re-use with attribution to this site (CC-BY 3.0).</a>
+<span style="position: absolute; right: 0;">
+<iframe src="https://platform.twitter.com/widgets/tweet_button.html?size=s&url=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D665467text=Academic Family Tree&hashtags=academictree" width="60" height="25" size="small" scrolling="no" title="" style="border: 0; overflow: hidden;"></iframe>
+<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D665467&layout=button&size=small&mobile_iframe=true&width=60&height=25&appId" width="60" height="25" style="border:none;overflow:hidden;" scrolling="no" frameborder="0" allowTransparency="true"></iframe>
+</span>
+</div>
+            </div>
+            </footer>
+    <script type="text/javascript" src="/ui/vendor/jquery.js"></script>
+    <script type="text/javascript" src="/ui/vendor/jquery-ui.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="/ui/vendor/jquery.ui.autocomplete.html.js" type="text/javascript"></script>
+    <script type="text/javascript" src="/ui/aComplete.js"></script>
+    <script type="text/javascript" src="/ui/vendor/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/ui/submital.js" type="text/javascript"></script>
+    <script>
+          /* added 2026-05-13: expose CSRF token for AJAX calls */
+          var csrfToken = "6805eac4dc4135805b5dc33c6150504c2b61e96cc988a24ff02b2467f4c70445";
+          /* end added 2026-05-13 */
+          $( "#sign-in" ).click(function() {
+          $( ".login-container" ).toggle("fast");
+          });
+          $( "#sign-in2" ).click(function() {
+          $( ".login-container" ).toggle("fast");
+          });
+          $(document).ready(function() {  
+  //navigation toggle
+  var menuToggle = $("#menuToggle");
+  var menu = $("#navigation");
+  var menuItem = $("#navigation ul li");
+  
+  menuToggle.click(function() {
+    menu.toggleClass("active");
+  });
+  
+  menuItem.click(function() {
+    menu.removeClass("active");
+    menuItem.removeClass("current-page");
+    $(this).addClass("current-page");
+  });
+
+	h=$('.wrapper').height();
+	//console.log(h);
+	hwrap = h-78;
+	$('.wrapper').css('min-height',hwrap);
+
+
+// login js
+
+$('.sign-in-trig').click(function() {
+  $('#login-modal').addClass('selected');
+  $('#login-modal-container').css('display','block');
+  $('#login-button').css('display','inline-block');
+  $('#login-sign-up').removeClass('selected');
+  $('.response').html("");
+  $('#sign-up-modal-container').css('display','none');
+  $('#sign-up-button').css('display','none');
+});
+
+$('.sign-up-trig').click(function() {
+  $('#login-sign-up').addClass('selected');
+  $('#sign-up-modal-container').css('display','block');
+  $('#sign-up-button').css('display','inline-block');
+  $('#login-modal').removeClass('selected');
+  $('#login-modal-container').css('display','none');
+  $('.response').html("");
+  $('#login-button').css('display','none');
+});
+
+});
+
+  $(window).resize(function() {
+  
+	h=$('.wrapper').height();
+	console.log('wrapper' + h);
+	w=$(window).height();
+	console.log('widow' + w);
+	hwrap = w-84;
+	$('.wrapper').css('min-height',hwrap);
+});
+
+</script>
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1f2d5326a6054556bb10c6140b38074a","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-61671548-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-61671548-1');
+</script>
+<!--
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61671548-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+-->
+
+      	<script>
+
+
+
+      		jQuery(document).ready(function($) {
+      			$(".clickable-row").click(function() {
+      				window.document.location = $(this).data("href");
+      			});
+      			$('.clickable-row').hover(function() {
+      				$(this).css('cursor','pointer');
+      			});
+
+
+      			$('.alert').hide();
+      			$(".close").click(function() {
+      				$('.alert').hide();
+      			});
+
+      			$('.cancel').click(function() {
+      				$('.response').hide();
+      			});
+
+			$('.modal').on('hidden.bs.modal', function () {
+			$('.response').hide();
+})	
+
+      			$(document).keyup(function(e) {
+		     if (e.keyCode == 27) { // escape key maps to keycode `27`
+		     	$('.alert').hide();
+		     }
+		   });
+
+
+      		});
+      	</script>
+
+

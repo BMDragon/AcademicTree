@@ -228,13 +228,60 @@ def best_name(refs, info):
     return sorted(refs)[0]
 
 
+def merge_by_neighbour_names(cr):
+    """Union groups X, Y (not two distinct Wikidata items) whose names match and
+    that have a matching-name advisor or student. Returns True if anything merged."""
+    uf = cr.uf
+    for c in cr.adv:  # students known only as children on saved pages
+        uf.find(c)
+    groups = {}
+    for r in list(uf.p):
+        groups.setdefault(uf.find(r), set()).add(r)
+    name = {g: best_name(refs, cr.info) for g, refs in groups.items()}
+    nbr = {}
+    for c, advs in cr.adv.items():
+        gc = uf.find(c)
+        for a in advs:
+            ga = uf.find(a)
+            nbr.setdefault(gc, set()).add(ga)
+            nbr.setdefault(ga, set()).add(gc)
+    by_key = {}
+    for g in groups:
+        if g.startswith(("bai:",)) or g == "me":
+            continue
+        k = names.key(name[g])
+        if k:
+            by_key.setdefault(k[0], []).append(g)
+    merged = False
+    for gs in by_key.values():
+        if len(gs) < 2 or len(gs) > 200:
+            continue
+        for i, a in enumerate(gs):
+            for b in gs[i + 1:]:
+                ra, rb = uf.find(a), uf.find(b)
+                if ra == rb or not names.same_person(name[a], name[b]):
+                    continue
+                if any(x.startswith("wd:") for x in groups[a]) and any(x.startswith("wd:") for x in groups[b]):
+                    continue
+                # neighbours other than a/b themselves (a father advising a
+                # same-named son must not count as a shared neighbour)
+                na = {name.get(uf.find(x), "") for x in nbr.get(a, ()) if uf.find(x) not in (ra, rb)}
+                nb = {name.get(uf.find(x), "") for x in nbr.get(b, ()) if uf.find(x) not in (ra, rb)}
+                if any(names.same_person(x, y) for x in na for y in nb):
+                    uf.union(a, b)
+                    merged = True
+    return merged
+
+
 def assemble(cr, me_edges):
     """Return (groups, parents) where parents[child] = {parent: (type, set(sources))}."""
     uf = cr.uf
-    # merge co-advisors of the same student that are clearly one person
+    # merge co-advisors of the same student that are clearly one person, and
+    # (for sources without shared IDs, e.g. saved academictree pages) people
+    # whose names match and who share an advisor or student by name
     changed = True
     while changed:
-        changed = False
+        changed = merge_by_neighbour_names(cr)
         by_child = {}
         for c, advs in cr.adv.items():
             for a in advs:
@@ -580,7 +627,7 @@ def enrich(recs, cfg):
         if th.get(t):
             r["thumbnail"] = th[t]
         have = {k["label"].lower() for k in r.get("known_for", []) if k.get("label")}
-        for k in kf.get(t, []):
+        for k in (kf.get(t) or []):
             if k["label"].lower() not in have and not re.match(r"(?i)^(full list|list of|see list|more)\b", k["label"]):
                 r.setdefault("known_for", []).append(k)
 

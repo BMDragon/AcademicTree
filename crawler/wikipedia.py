@@ -1,12 +1,12 @@
-"""English Wikipedia, batched: intro extract, thumbnail, infobox 'known_for'.
+"""English Wikipedia, batched: thumbnail and infobox 'known_for'.
 
-Uses the action API with many titles per request (extracts: 20, page images
-and wikitext: 50) to stay far below Wikimedia's rate limits.
+Uses the action API with many titles per request (page images and
+wikitext: 50) to stay far below Wikimedia's rate limits.
 """
 import re
 import urllib.parse
 
-from . import http
+from . import http, itemcache
 
 API = "https://en.wikipedia.org/w/api.php"
 
@@ -53,12 +53,11 @@ def _batched(titles, n, params, take):
     return out
 
 
-def extracts(titles):
-    return _batched(titles, 20, {"prop": "extracts", "exintro": 1, "explaintext": 1, "exlimit": 20},
-                    lambda p: p.get("extract"))
-
-
 def thumbnails(titles):
+    return itemcache.batched("wp.thumb.v1", titles, _thumbnails_fetch)
+
+
+def _thumbnails_fetch(titles):
     return _batched(titles, 50, {"prop": "pageimages", "piprop": "thumbnail", "pithumbsize": 200,
                                  "pilimit": 50},
                     lambda p: (p.get("thumbnail") or {}).get("source"))
@@ -87,6 +86,10 @@ def parse_known_for(wikitext):
 
 
 def known_for(titles):
+    return itemcache.batched("wp.knownfor.v2", titles, _known_for_fetch)
+
+
+def _known_for_fetch(titles):
     def take(p):
         revs = p.get("revisions") or []
         if not revs:

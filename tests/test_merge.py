@@ -71,10 +71,35 @@ class Merge(unittest.TestCase):
         self.assertEqual(set(parents[f("wd:Q3")]), {f("mgp:7")})   # Alonzo Church is a person
         self.assertNotIn(f("wd:Q2"), groups)
 
+    def test_saved_page_merges_via_shared_student(self):
+        cr = crawler()
+        cr.info.update({"wd:Q1": {"name": "Kate Scholberg"}, "insp:2": {"name": "Charles W. Peck"},
+                        "at:10": {"name": "Charles W. Peck"}, "at:11": {"name": "Kate Scholberg"},
+                        "at:12": {"name": "Robert L. Walker"}})
+        cr.add("wd:Q1", 0)
+        cr.add_adv("wd:Q1", "insp:2", "phd")
+        cr.add_adv("at:11", "at:10", "phd")      # saved Peck page lists Scholberg as a child
+        cr.add_adv("at:10", "at:12", "phd")      # ... and Walker as his advisor
+        groups, parents = build.assemble(cr, [])
+        f = cr.uf.find
+        self.assertEqual(f("at:11"), f("wd:Q1"))
+        self.assertEqual(f("at:10"), f("insp:2"))
+        self.assertIn(f("at:12"), parents[f("insp:2")])
+
+    def test_same_name_father_and_son_not_merged(self):
+        cr = crawler()
+        cr.info.update({"mgp:1": {"name": "Johann Smith"}, "mgp:2": {"name": "Johann Smith"}})
+        cr.add("mgp:1", 0)
+        cr.add_adv("mgp:1", "mgp:2", "phd")
+        build.assemble(cr, [])
+        self.assertNotEqual(cr.uf.find("mgp:1"), cr.uf.find("mgp:2"))
+
     def test_names(self):
         self.assertTrue(names.same_person("Stoecker, Horst", "Horst Stöcker"))
         self.assertTrue(names.same_person("Barish, Barry C.", "Barry Clark Barish"))
         self.assertFalse(names.same_person("John Smith", "Jane Doe"))
+        self.assertTrue(names.same_person("Dirichlet, Gustav", "Johann Peter Gustav Lejeune Dirichlet"))
+        self.assertFalse(names.same_person("Karl Smith", "Johann Peter Smith"))
 
 
 class Cycles(unittest.TestCase):

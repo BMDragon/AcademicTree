@@ -2,7 +2,7 @@
 import re
 import urllib.parse
 
-from . import http
+from . import http, itemcache
 
 ENDPOINT = "https://query.wikidata.org/sparql"
 BATCH = 150
@@ -58,7 +58,7 @@ def _strvalues(vals):
     return " ".join(out)
 
 
-def links(qids):
+def _links_fetch(qids):
     """For each QID: label, external IDs and advisors (with edge types).
 
     Returns {qid: {"label", "mgp", "bai", "at", "orcid", "advisors": [(qid, type)]}}
@@ -106,7 +106,7 @@ SELECT ?p ?pLabel ?mgp ?bai ?at ?orcid ?human WHERE {
     return out
 
 
-def lookup_by(prop, values):
+def _lookup_by_fetch(prop, values):
     """Map external-id values (for property P549/P2930/P496/P2381) to QIDs."""
     res = {}
     for chunk in _chunks(sorted(set(values)), 200):
@@ -117,7 +117,7 @@ def lookup_by(prop, values):
     return res
 
 
-def lookup_by_enwiki(titles):
+def _lookup_by_enwiki_fetch(titles):
     """Map English Wikipedia titles to QIDs via sitelinks."""
     import urllib.parse as up
     res = {}
@@ -146,7 +146,7 @@ SELECT ?p ?aw ?time WHERE {
             for r in rows]
 
 
-def humans_by_label(labels):
+def _humans_by_label_fetch(labels):
     """Resolve English labels/aliases to human QIDs that have an enwiki article.
 
     Returns {label: [(qid, sitelinks)]} sorted by sitelinks desc."""
@@ -181,7 +181,7 @@ def wiki_title(url):
     return t or None
 
 
-def enrich(qids):
+def _enrich_fetch(qids):
     """Biographical facts for display. Returns {qid: dict}."""
     out = {q: {"awards": [], "known_for": [], "named_after": [], "employers": [],
                "fields": [], "educated": []} for q in qids}
@@ -255,3 +255,41 @@ SELECT ?p ?x ?xLabel ?xDesc ?wiki WHERE { VALUES ?p { %s } ?x wdt:P138 ?p .
                 {"label": lbl, "desc": r.get("xDesc"), "qid": qid(r["x"]),
                  "url": r.get("wiki") or r["x"], "wiki": bool(r.get("wiki"))})
     return out
+
+
+# ---- per-item cached entry points (see itemcache.py) ----------------------
+_SETS = ("mgp", "bai", "at", "orcid")
+
+
+def _enc_links(d):
+    return {k: (sorted(v) if k in _SETS else v) for k, v in d.items()}
+
+
+def _dec_links(d):
+    return {k: (set(v) if k in _SETS else v) for k, v in d.items()}
+
+
+def links(qids):
+    """For each QID: label, external IDs and advisors (with edge types)."""
+    return itemcache.batched("wd.links.v1", qids, _links_fetch, _enc_links, _dec_links)
+
+
+def lookup_by(prop, values):
+    """Map external-id values (P549/P2930/P496/P2381) to QIDs."""
+    got = itemcache.batched("wd.lookup.%s.v1" % prop, values, lambda vs: _lookup_by_fetch(prop, vs))
+    return {k: v for k, v in got.items() if v}
+
+
+def lookup_by_enwiki(titles):
+    got = itemcache.batched("wd.enwiki.v1", titles, _lookup_by_enwiki_fetch)
+    return {k: v for k, v in got.items() if v}
+
+
+def humans_by_label(labels):
+    got = itemcache.batched("wd.humanlabel.v1", labels, _humans_by_label_fetch)
+    return {k: [tuple(x) for x in v] for k, v in got.items() if v}
+
+
+def enrich(qids):
+    """Biographical facts for display. Returns {qid: dict}."""
+    return itemcache.batched("wd.enrich.v3", qids, _enrich_fetch)
