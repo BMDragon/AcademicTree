@@ -606,9 +606,39 @@ def main():
         log("counting QB question mentions for %d more people in the tree" % len(todo))
         for g, m in notables.mentions_many(todo, qcfg["category"]).items():
             recs[g]["qb_mentions"] = m
+    if not args.no_qb:
+        # Everyone in the tree is also checked across ALL subjects (philosophy,
+        # history, ...): questions whose answer contains their full name, and
+        # questions whose text mentions it.
+        names_all = {g: r["name"] for g, r in recs.items() if g != "me"}
+        # Across all subjects common names collide (the astronomer Robert Smith
+        # vs the singer). Only count a name if this person is its most notable
+        # bearer on Wikidata (most Wikipedia language editions).
+        bearers = wikidata.humans_by_label(set(names_all.values()))
+        ambiguous = set()
+        for g, nm in names_all.items():
+            lst = bearers.get(nm, [])
+            if len(lst) > 1 and lst[0][0] != recs[g].get("qid"):
+                ambiguous.add(g)
+            elif not lst and not recs[g].get("qid"):
+                pass  # no Wikidata bearer at all: nothing to collide with on Wikidata
+        if ambiguous:
+            log("  skipping %d names borne by a more notable person: %s"
+                % (len(ambiguous), ", ".join(sorted(names_all[g] for g in ambiguous)[:15])))
+        names_all = {g: nm for g, nm in names_all.items() if g not in ambiguous}
+        log("counting all-subject QB answers + mentions for %d people in the tree" % len(names_all))
+        ans_all = notables.mentions_many(names_all, None, search_type="answer")
+        men_all = notables.mentions_many(names_all, None, search_type="question")
+        for g in names_all:
+            if ans_all.get(g):
+                recs[g]["qb_all_answers"] = ans_all[g]
+            if men_all.get(g):
+                recs[g]["qb_all_mentions"] = men_all[g]
     for r in recs.values():
-        r["qb_canon"] = (r.get("qb", 0) >= qcfg["min_count"]
-                         or r.get("qb_mentions", 0) > qcfg["mentions_more_than"])
+        sci = (r.get("qb", 0) >= qcfg["min_count"] or r.get("qb_mentions", 0) > qcfg["mentions_more_than"])
+        every = (r.get("qb_all_answers", 0) >= qcfg["min_count"]
+                 or r.get("qb_all_mentions", 0) > qcfg["mentions_more_than"])
+        r["qb_canon"] = sci or every
         if r["qb_canon"]:
             r["notable"] = True
 
@@ -746,6 +776,7 @@ def report_missing(recs, sub, anc):
 # in hover cards and goes to details.json, which the page loads after the
 # first draw.
 CORE_FIELDS = {"id", "name", "birth", "death", "prizes", "qb", "qb_mentions", "qb_canon",
+               "qb_all_answers", "qb_all_mentions",
                "ancestor", "notable", "relation", "relation_phd"}
 
 

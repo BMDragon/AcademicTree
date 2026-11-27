@@ -37,9 +37,20 @@
     return b;
   }
   function qbText(n) {
+    const pl = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
     const parts = [];
-    if (n.qb) parts.push(`${n.qb} science answerline${n.qb === 1 ? "" : "s"}`);
-    if (n.qb_mentions) parts.push(`named in ${n.qb_mentions} science question${n.qb_mentions === 1 ? "" : "s"}`);
+    if (n.qb || n.qb_mentions) {
+      const sci = [];
+      if (n.qb) sci.push(pl(n.qb, "answerline"));
+      if (n.qb_mentions) sci.push("named in " + pl(n.qb_mentions, "question"));
+      parts.push("Science: " + sci.join(", "));
+    }
+    if (n.qb_all_answers || n.qb_all_mentions) {
+      const all = [];
+      if (n.qb_all_answers) all.push(pl(n.qb_all_answers, "answer"));
+      if (n.qb_all_mentions) all.push("named in " + pl(n.qb_all_mentions, "question"));
+      parts.push("All subjects: " + all.join(", "));
+    }
     return parts.join(" · ");
   }
   function years(n) {

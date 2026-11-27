@@ -95,16 +95,18 @@ def name_variants(name):
     return out
 
 
-def mentions(name, category="Science", ambiguous=frozenset()):
-    """Number of QB questions (tossups + bonuses) whose text contains the name.
-    Shortened variants listed in `ambiguous` (shared by several people) are skipped."""
+def mentions(name, category="Science", ambiguous=frozenset(), search_type="question"):
+    """Number of QB questions (tossups + bonuses) whose text (search_type
+    "question") or answerline ("answer") contains the name; category None =
+    all subjects. Shortened variants in `ambiguous` are skipped."""
     best = 0
     for i, v in enumerate(name_variants(name)):
         if i > 0 and v in ambiguous:
             continue
-        q = urllib.parse.urlencode({"queryString": v, "searchType": "question", "categories": category,
-                                    "exactPhrase": "true", "maxReturnLength": 1})
-        js = http.get_json(QB_QUERY + "?" + q)
+        params = {"queryString": v, "searchType": search_type, "exactPhrase": "true", "maxReturnLength": 1}
+        if category:
+            params["categories"] = category
+        js = http.get_json(QB_QUERY + "?" + urllib.parse.urlencode(params))
         if js:
             best = max(best, js.get("tossups", {}).get("count", 0) + js.get("bonuses", {}).get("count", 0))
     return best
@@ -120,13 +122,13 @@ def ambiguous_short_names(names):
     return {s for s in shorts if len(hits.get(s, [])) != 1}
 
 
-def mentions_many(names, category="Science", log=print):
-    """{key: mentions} for {key: name}."""
+def mentions_many(names, category="Science", log=print, search_type="question"):
+    """{key: count} for {key: name} (see mentions())."""
     from concurrent.futures import ThreadPoolExecutor
     keys = sorted(names)
     amb = frozenset(ambiguous_short_names(names.values()))
     # QB Reader allows ~20 requests/s; config paces us at ~12/s, with enough
     # threads in flight to keep that pace given ~0.4 s latency.
     with ThreadPoolExecutor(max_workers=8) as pool:
-        vals = list(pool.map(lambda k: mentions(names[k], category, amb), keys))
+        vals = list(pool.map(lambda k: mentions(names[k], category, amb, search_type), keys))
     return dict(zip(keys, vals))
