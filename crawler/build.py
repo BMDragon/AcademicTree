@@ -61,6 +61,7 @@ class Crawler:
         self.bai_done = {}
         self.orcid_done = {}
         self.nonhuman = set()  # Wikidata items that are not people (schools etc.)
+        self.name_tried = set()  # groups already tried for Wikidata name matching
 
     # ----- bookkeeping -------------------------------------------------
     def add(self, ref, depth):
@@ -207,7 +208,59 @@ class Crawler:
             if new_orcid:
                 for v, q in wikidata.lookup_by("P496", new_orcid).items():
                     self.same(self.orcid_done[v], "wd:" + q)
+            if self.cfg["sources"].get("wikidata_name_match", True):
+                self.resolve_unlinked()
         pool.shutdown()
+
+    def resolve_unlinked(self):
+        """Link people known only from academictree/INSPIRE/MGP to Wikidata.
+
+        Candidates are Wikidata humans whose English label equals the person's
+        name (or first+last without middle initials); a candidate is accepted
+        only if one of its Wikidata advisors matches, by name, one of the
+        person's advisors or students already in the crawl, and only if exactly
+        one candidate is confirmed. Example: academictree's Bruno Pontecorvo ->
+        Wikidata Q453557 (confirmed by advisor Enrico Fermi)."""
+        uf = self.uf
+        groups = {}
+        for r in list(uf.p):
+            if not r.startswith("bai:"):
+                groups.setdefault(uf.find(r), set()).add(r)
+        nbr = {}
+        for c, advs in self.adv.items():
+            for a in advs:
+                nbr.setdefault(uf.find(c), set()).add(uf.find(a))
+                nbr.setdefault(uf.find(a), set()).add(uf.find(c))
+        todo = {}
+        for g, refs in groups.items():
+            if g in self.name_tried or any(r.startswith("wd:") for r in refs) or g not in nbr:
+                continue
+            self.name_tried.add(g)
+            nm = best_name(refs, self.info)
+            if ":" in nm or len(nm.split()) < 2:
+                continue
+            todo[g] = [nm] + notables.name_variants(nm)[1:]
+        if not todo:
+            return
+        hits = wikidata.humans_by_label({v for vs in todo.values() for v in vs})
+        cands = {g: {q for v in vs for q, _ in hits.get(v, [])} for g, vs in todo.items()}
+        allc = sorted({q for qs in cands.values() for q in qs})
+        if not allc:
+            return
+        cl = wikidata.links(allc)
+        advq = sorted({a for q in allc for a in cl[q]["advisors"]})
+        advname = {a: d["label"] for a, d in wikidata.links(advq).items()} if advq else {}
+        linked = []
+        for g, qs in cands.items():
+            mine = {best_name(groups.get(x, {x}), self.info) for x in nbr.get(g, ())}
+            ok = [q for q in qs
+                  if any(names.same_person(advname.get(a, ""), m) for a in cl[q]["advisors"] for m in mine)]
+            if len(ok) == 1:
+                self.same(g, "wd:" + ok[0])
+                linked.append("%s -> %s" % (best_name(groups[g], self.info), ok[0]))
+        if linked:
+            log("  linked %d people to Wikidata by name + shared advisor: %s"
+                % (len(linked), "; ".join(linked[:30])))
 
 
 # ---------------------------------------------------------------------------
