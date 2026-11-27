@@ -1,0 +1,705 @@
+<script language="javascript"  type="text/javascript">
+
+var gPUBID=''; // global placeholder
+
+function getHttpRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('div'+songid).innerHTML = res;
+  }
+}
+
+function ChangeHS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=humanscore&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function ChangePSS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=pubsimscore&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function ChangeSS(pid,pid2,score) {  // This function does the AJAX request
+  gPUBID=pid.toString() + pid2.toString();
+  http.open('GET','pubcommands.php?cmd=simscore&pid='+pid+'&pid2='+pid2+'&score='+score);
+  http.onreadystatechange = getSSRes;
+  http.send(null);
+}
+
+function AddHS(pid,pubid,score) {  // This function does the AJAX request
+  gPUBID=pubid;
+  http.open('GET','pubcommands.php?cmd=humanadd&pid='+pid+'&pubid='+pubid+'&score='+score);
+  http.onreadystatechange = getHSRes;
+  http.send(null);
+}
+
+function getHSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getPSSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getSSRes() {
+  pubid=gPUBID;
+  if (http.readyState == 4) {
+    res = http.responseText;  // These following lines get the response and update the page
+    //document.getElementById('pri'+pubid).innerHTML = res;
+  }
+}
+
+function getXHTTP() {
+  var xhttp;
+   try {   // The following "try" blocks get the XMLHTTP object for various browsers
+      xhttp =
+ new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (e2) {
+            // This block handles Mozilla/Firefox browsers...
+            try {
+              xhttp = new XMLHttpRequest();
+            } catch (e3) {
+              xhttp = false;
+            }
+      }
+    }
+  return xhttp; // Return the XMLHTTP object
+}
+
+var http = getXHTTP(); // This executes when the page first loads.
+
+</script>
+
+
+
+
+
+<TITLE>Physics Tree - Enrico  Fermi</TITLE>
+
+<!DOCTYPE html>
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0">  -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Physics Tree: mentors, trainees, research areas and affiliations for researcher" />
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="style/normalize.css">
+    <link rel="stylesheet" href="style/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="style/custom.css">
+    <link rel="stylesheet" type="text/css" href="/ui/vendor/jquery-ui.css">
+    <script type="text/javascript" src="/ui/vendor/modernizr.js"></script>
+        <div id="fb-root"></div>
+    <script>(function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.9";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));</script>
+  </head>
+
+
+<style type="text/css">
+A{text-decoration:none; color: #12184a}
+A:visited {text-decoration: none; color: #22285a}A:active {text-decoration: none; color: #e6d406}
+A:hover {color: #e6d406; text-decoration: underline}
+body {background-color: rgb(241, 241, 241); color: #000000;}
+</style>
+                  <div class="modal fade" id="signIN" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                    <div class="modal-dialog" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                                                    <div class="login-choice">
+                            <h4 id="login-modal" class="entrance-selector selected">Log In</h4>
+                            <h4 id="login-sign-up" class="entrance-selector">Sign Up</h4>
+                          </div>
+                                                  </div>
+                        <div class="modal-body">
+        <div class="response" role="alert">
+        </div>
+
+                  <div id="login-modal-container"><p>Log in to add people & connections, or <b><a href="#" class="sign-up-trig trig">click here to create an account</a></b>.</p>
+<form id="logmein" action="process.php" method="POST">
+<input type="text" placeholder="Username" class="text-input text-input-navy text-input-o" name="user" size=20 maxlength="30" value=""></h5> <input type="password" placeholder="Password"class="text-input text-input-navy text-input-o" name="pass" size=20 maxlength="30" value=""></h5>
+<font size="2"><input type="checkbox" name="remember"> Save login </font>
+ <input type="hidden" name="sublogin" value="1">
+<input type="hidden" name="refurl" value="/physics/peopleinfo.php?pid=34756">
+<input type="hidden" name="csrf_token" value="16d9efb987c18c1b95df2dda4dc04fc93432441f51fc52931a48cf68084ef4a3">
+ - <font size="2"><a href="forgotpass.php">Forgot password</a></font>
+</div><div id="sign-up-modal-container"><form id="new-acount"><p>Already have an account? Log in <b><a href="#" class="sign-in-trig trig">here.</a></b></p><input type="hidden" name="csrf_token" value="16d9efb987c18c1b95df2dda4dc04fc93432441f51fc52931a48cf68084ef4a3">
+<span>Login ID:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE=TEXT NAME="newusername" placeholder="(Visible to the public but not directly linked to your node.)"><span>Password:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE="password" placeholder="password" NAME="passwd" VALUE=""><span>Re-enter:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE="password" placeholder="password again" NAME="passwd2" VALUE=""><span>Email:</span><INPUT class="text-input text-input-navy text-input-o register" TYPE=TEXT NAME="email" placeholder="email"><p>(Don't worry, your e-mail will not be distributed or made public. Its only purpose is for us to contact you about your account.)</p></div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-navy btn-border-o" data-dismiss="modal">Close</button>
+                                                    <button id="login-button" type="submit" class="btn btn-navy btn-border-o">Login</button>
+                          <button id="sign-up-button" onclick="validateNewUser(event)" type="submit" class="btn btn-navy btn-border-o">Sign Up</button>
+                                                  </div>
+                              </form>
+                      </div>
+                    </div>
+                  </div>
+
+    <body id="home">
+     
+        <div class="wrapper">
+         
+            <header>
+             <a id="menuToggle" href="#">☰</a>
+                <a id="logo" href="index.php">Physics Tree</a>            <div id="navigation">
+                <form ACTION="peoplelist.php" id="searchform" role="search"><input type="text" class="text-input text-input-o text-input-navy text_people_top" name="searchname" placeholder="Search" style="  width: 150px; margin: 0;"><input type="hidden" id="check" NAME="searchalltrees" value="1"><input type="hidden" id="pidconn" name="pidconn" value="-1">
+<input type="hidden" id="allfields" name="allfields" value="1">
+<button type="submit" class="btn btn-navy btn-border-o"><img src="./images/search.svg"></button></form><ul><li><a href="tree.php?pid=34756">Tree</a></li><li><a href="peoplelist.php?new=1">Recent Additions</a></li><li><a href="distance.php">Distance</a></li><li><a href="analysis.php">Analysis</a></li><li><a href="faq.php">Help</a></li><li><a href="faq.php#donate" class="btn btn-thin btn-green btn-fill-horz-o" style="padding: 1px 5px;">Donate</a></li><li><a href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign In/Register</a></li>
+
+      
+            </ul>
+            </div>
+            </header>
+
+            <div class="main clearfix">
+<link rel="stylesheet" href="style/print.css" type="text/css" media="print">
+<div class="container cf" > <div class="boxfloat"> <div class="boxinline">
+  <div class="personphoto noprint">
+<img src="/photo/003/cache.034756.Enrico_Fermi.jpg" class="img-thumbnail img-responsive"> 
+  </div>
+<!-- Begin DIV holding Person Information  -->
+  <div class="personinfo">
+          <h1 style="margin-top:0;">
+                  Enrico  Fermi, Ph.D.  </h1>
+<table border="0" cellspacing="0">
+<tr><td valign="top"><h5 style="margin:0;">Affiliations:&nbsp;</h5></td><td>1926-1938&nbsp;</td><td>Theoretical Physics&nbsp;</td><td><a href="inst.php?locid=1054">University of Rome</a>, Roma, Lazio, Italy&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>1939-1944&nbsp;</td><td>Physics&nbsp;</td><td><a href="inst.php?locid=54">Columbia University</a>, New York, NY&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>1942-1954&nbsp;</td><td>Physics&nbsp;</td><td><a href="inst.php?locid=3797">University of Chicago</a>, Chicago, IL&nbsp;</td></tr>
+</table>
+</td></tr>
+                  <h5 style="display: inline-block; margin: 0;">Area:</h5> Particle Theory                  <br>
+
+<h5 style="display: inline-block; margin: 0;">Website:</h5> <a href="http://www.nobelprize.org/nobel_prizes/physics/laureates/1938/fermi.html" target="_blank">http://www.nobelprize.org/nobel_prizes/physics/laureates/1938/fermi.html</a><br><h5 style="display: inline-block; margin: 0;">Google:</h5> <a href="https://www.google.com/search?hl=en&q=%22Enrico+Fermi%22" target="_blank">"Enrico Fermi"</a><br><h5 style="display: inline-block; margin: 0;">Bio:</h5><div><p>(1901 - 1954)<br />
+<a target="_blank" rel="noopener noreferrer" href="http://www.nasonline.org/member-directory/deceased-members/20001146.html">http://www.nasonline.org/member-directory/deceased-members/20001146.html</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://doi.org/10.1098/rsbm.1955.0006">DOI: 10.1098/rsbm.1955.0006</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://www.atomicheritage.org/profile/enrico-fermi">https://www.atomicheritage.org/profile/enrico-fermi</a><br />
+<a target="_blank" rel="noopener noreferrer" href="http://www.atomicarchive.com/Bios/Fermi.shtml">http://www.atomicarchive.com/Bios/Fermi.shtml</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://history.aip.org/phn/11508031.html">https://history.aip.org/phn/11508031.html</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://www.manhattanprojectvoices.org/people/enrico-fermi">https://www.manhattanprojectvoices.org/people/enrico-fermi</a><br />
+<a target="_blank" rel="noopener noreferrer" href="http://www.nuclearfiles.org/menu/library/biographies/bio_fermi-enrico.htm">http://www.nuclearfiles.org/menu/library/biographies/bio_fermi-enrico.htm</a><br />
+<a target="_blank" rel="noopener noreferrer" href="https://www.manhattanprojectvoices.org/oral-histories/fermi-love-part-1">https://www.manhattanprojectvoices.org/oral-histories/fermi-love-part-1</a><br />
+[<a target="_blank" rel="noopener noreferrer" href="http://www.lib.uchicago.edu/e/crerar/fe">http://www.lib.uchicago.edu/e/crerar/fe</a></p> ... (<a aria-label="Show expanded bio" href="peopleinfo.php?pid=34756&expand=bio">Show more</a>)</div><tr><td><h5 style="display: inline-block; margin: 0;"><a href="faq.php#meandist">Mean distance</a>: 
+8.42</h5>
+&nbsp;</td>
+</div> </div> </div> </div>
+<!-- Construct button container -->
+<div class="container"> <div class="btns noprint">
+<a href="tree.php?pid=34756" class="btn btn-default">Tree</a>
+<a href="publications.php?pid=34756" class="btn btn-default">Publications</a>
+<a href="peoplelist.php?special=sim&specialN=34756" class="btn btn-default">Similar researchers</a> 
+<a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?CMD=search&DB=pubmed&term=Fermi%2BE[au]" target="_blank" class="btn btn-default">PubMed</a> <a href="reporterror.php?pid=34756" class="btn btn-default">Report error</a> </div>
+<div class="leftcol">    
+	<div class="boxfloat" ><h4 style="display:inline-block;">Parents</h4>
+<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add mentor</a><!-- Construct Parent Connection Container -->
+	<div class="container" style="display:inline">
+		<!-- Construct Parent Connection UL -->
+		<table class="connection_list">
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=34757">Luigi Puccianti</a></td>
+  <td>grad student</td>
+  <td>1918-1922</td>
+  <td><a href="peoplelist.php?searchinst=University of Pisa">University of Pisa</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=1942">Max Born</a></td>
+  <td>post-doc</td>
+  <td>1923</td>
+  <td><a href="peoplelist.php?searchinst=Georg-August-Universität Göttingen">Universität Göttingen</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="http://neurotree.org/neurotree/peopleinfo.php?pid=4360">Guido Castelnuovo</a></td>
+  <td>post-doc</td>
+  <td>1922-1923</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a> (Neurotree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="http://neurotree.org/neurotree/peopleinfo.php?pid=6685">Federigo Enriques</a></td>
+  <td>post-doc</td>
+  <td>1922-1923</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a> (Neurotree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=75639">Tullio Levi-Civita</a></td>
+  <td>post-doc</td>
+  <td>1922-1923</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=23346">Paul Ehrenfest</a></td>
+  <td>post-doc</td>
+  <td>1924</td>
+  <td><a href="peoplelist.php?searchinst=Leiden University">Leiden</a></td>
+</tr>
+		</tbody>
+		</table>      
+	</div>
+	</div>
+
+	<!-- Construct Child Connection Container -->
+	<div class="boxfloat"><h4 style="display:inline-block;">Children</h4>
+<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add trainee</a>	<div class="container" style="display:inline;">
+		<table class='connection_list'>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=62861">Homi&nbsp;Jehangir Bhabha</a></td>
+  <td>research assistant</td>
+  <td>1932</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=34500">Eugene Feenberg</a></td>
+  <td>research assistant</td>
+  <td>1931-1933</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=714884">Bruno Pontecorvo</a></td>
+  <td>research assistant</td>
+  <td>1931-1936</td>
+  <td><a href="peoplelist.php?searchinst=Università degli Studi di Roma <q>La Sapienza</q>">Sapienza Università di Roma</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=645255">Albert Wattenberg</a></td>
+  <td>research assistant</td>
+  <td>1941</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=840767">Darragh&nbsp;Edmund Nagle</a></td>
+  <td>research assistant</td>
+  <td>1942-1946</td>
+  <td><a href="peoplelist.php?searchinst=Los Alamos National Laboratory">LANL</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="https://academictree.org/etree/peopleinfo.php?pid=812820">Eugene Fubini</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=Università degli Studi di Roma <q>La Sapienza</q>">Sapienza Università di Roma</a> (E-Tree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=60296">Leo Pincherle</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=79611">Giulio Racah</a></td>
+  <td>grad student</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=Rome">Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=211">Emilio Segrè</a></td>
+  <td>grad student</td>
+  <td>1928</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=90870">Edoardo Amaldi</a></td>
+  <td>grad student</td>
+  <td>1929</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=792643">Ettore Majorana</a></td>
+  <td>grad student</td>
+  <td>1928-1929</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=625115">Oreste Piccioni</a></td>
+  <td>grad student</td>
+  <td>1938</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=75073">Herbert&nbsp;L. Anderson</a></td>
+  <td>grad student</td>
+  <td>1940</td>
+  <td><a href="peoplelist.php?searchinst=Columbia University">Columbia</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=831143">George&nbsp;Wells Farwell</a></td>
+  <td>grad student</td>
+  <td>1948</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=34755">Geoffrey&nbsp;Foucar Chew</a></td>
+  <td>grad student</td>
+  <td>1944-1948</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=164509">Harold&nbsp;Melvin Agnew</a></td>
+  <td>grad student</td>
+  <td>1949</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=102426">Owen Chamberlain</a></td>
+  <td>grad student</td>
+  <td>1949</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=80978">Richard&nbsp;L. Garwin</a></td>
+  <td>grad student</td>
+  <td>1949</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=86525">Jack&nbsp;H. Steinberger</a></td>
+  <td>grad student</td>
+  <td>1949</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=879106">Marvin&nbsp;H. Wilkening</a></td>
+  <td>grad student</td>
+  <td>1949</td>
+  <td><a href="peoplelist.php?searchinst=Illinois Institute of Technology">Illinois Institute of Technology</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=59148">Marvin&nbsp;Leonard Goldberger</a></td>
+  <td>grad student</td>
+  <td>1946-1949</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=512844">Robert&nbsp;S. Ledley</a></td>
+  <td>grad student</td>
+  <td>1950</td>
+  <td><a href="peoplelist.php?searchinst=Columbia University">Columbia</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=66185">Tsung-Dao (政道) Lee (李)</a></td>
+  <td>grad student</td>
+  <td>1950</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=888315">Willem&nbsp;V. R. Malkus</a></td>
+  <td>grad student</td>
+  <td>1950</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=835253">Stewart&nbsp;David Bloom</a></td>
+  <td>grad student</td>
+  <td>1952</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=279965">Jay Orear</a></td>
+  <td>grad student</td>
+  <td>1953</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=101203">Mildred&nbsp;Spiewak Dresselhaus</a></td>
+  <td>grad student</td>
+  <td>1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=135703">Jerome&nbsp;I. Friedman</a></td>
+  <td>grad student</td>
+  <td>1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=72105">Arthur&nbsp;H. Rosenfeld</a></td>
+  <td>grad student</td>
+  <td>1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=70886">Robert&nbsp;A. Schluter</a></td>
+  <td>grad student</td>
+  <td>1947-1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=173419">Horace&nbsp;D. Taft</a></td>
+  <td>grad student</td>
+  <td>1955</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=32879">Hans&nbsp;Albrecht Bethe</a></td>
+  <td>post-doc</td>
+  <td>1930-1931</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=833870">George Placzek</a></td>
+  <td>post-doc</td>
+  <td>1931-1932</td>
+  <td><a href="peoplelist.php?searchinst=Universita di Roma">Universita di Roma</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=16600">Rudolf&nbsp;Ernst Peierls</a></td>
+  <td>post-doc</td>
+  <td>1932-1933</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=285325">Ugo Fano</a></td>
+  <td>post-doc</td>
+  <td>1934-1936</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=842700">Mário Schenberg</a></td>
+  <td>post-doc</td>
+  <td>1938</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=792672">Giorgio Careri</a></td>
+  <td>post-doc</td>
+  <td>1949-1949</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=787591">Asim&nbsp;O. Barut</a></td>
+  <td>post-doc</td>
+  <td>1953-1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=166021">Emil&nbsp;Jan Konopinski</a></td>
+  <td>research scientist</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=792644">Giovanni&nbsp;Gentile Jr.</a></td>
+  <td>research scientist</td>
+  <td>1928-1929</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=825315">Gian-Carlo Wick</a></td>
+  <td>research scientist</td>
+  <td>1932-1937</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=162584">Bruno Ferretti</a></td>
+  <td>research scientist</td>
+  <td>1937-1938</td>
+  <td><a href="peoplelist.php?searchinst=University of Rome">University of Rome</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="https://academictree.org/chemistry/peopleinfo.php?pid=843232">Nathan Sugarman</a></td>
+  <td>research scientist</td>
+  <td>1941</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a> (Chemistry Tree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=824850">Walter&nbsp;Henry Zinn</a></td>
+  <td>research scientist</td>
+  <td>1942-1944</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="https://academictree.org/chemistry/peopleinfo.php?pid=78680">Anthony&nbsp;Leonid Turkevich</a></td>
+  <td>research scientist</td>
+  <td>1942-1945</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a> (Chemistry Tree)</td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=75073">Herbert&nbsp;L. Anderson</a></td>
+  <td>research scientist</td>
+  <td>1942-1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=794067">Leona&nbsp;Marshall Libby</a></td>
+  <td>research scientist</td>
+  <td>1942-1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=135721">John Marshall</a></td>
+  <td>research scientist</td>
+  <td>1942-1954</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+		</tbody>
+		</table> 
+	</div>
+	</div>     
+
+	<!-- Construct Collaborator Connection Container -->
+	<div class="boxfloat" ><h4 style="display:inline-block;">Collaborators</h4>
+		<a style="float: right; font-size: small" href="#" id="login-trigger" data-toggle="modal" data-target="#signIN">Sign in to add collaborator</a>
+
+	<div class="container" style="display:inline;">
+		<table class="connection_list">
+	<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=743313">Orso&nbsp;Mario Corbino</a></td>
+  <td>collaborator</td>
+  <td></td>
+  <td><a href="peoplelist.php?searchinst="></a></td>
+</tr>
+<tr style="text-align:left">  <td><a href="peopleinfo.php?pid=164973">Franco Rasetti</a></td>
+  <td>collaborator</td>
+  <td>1923-1926</td>
+  <td><a href="peoplelist.php?searchinst=University of Florence">University of Florence</a></td>
+</tr>
+<tr style="border-bottom-style: none;text-align:left">
+  <td><a href="peopleinfo.php?pid=24662">Leó Szilárd</a></td>
+  <td>collaborator</td>
+  <td>1940-1942</td>
+  <td><a href="peoplelist.php?searchinst=University of Chicago">Chicago</a></td>
+</tr>
+<tr style="border-top-style: none;"><td colspan=5>&nbsp;(Manhattan Project)</td></tr>
+			</tbody>
+		</table> 
+	</div>
+	</div>   
+
+	
+      </div>
+         <div class="rightcol movepubdown">
+      <div class="boxfloat" style="padding-top:5px; padding-bottom:5px; padding-left:20px; padding-right:20px;"> 
+        <a href="publications.php?pid=34756&special=sim" class="btn btn-default" style="font-size: 10px; padding: 3px 5px;" rel="nofollow">BETA: Related publications</a>
+   <h4>Publications</h4>
+   <div class="container" style="display:table; width:100%; font-size:8px;">
+    <table class="table table-condensed table-striped table-responsive table-hover" style="font-size:1.2em;margin-bottom: 2px;">
+    <tr><td>
+          <p>You can help our author matching system! If you notice any publications incorrectly attributed to this author, please
+      <a href="#" data-toggle="modal" data-target="#signIN">sign in</a> and mark matches as correct or incorrect.</p>
+        </td></tr>
+
+      <tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Fermi E. (<b>2008</b>) Lectures on pions and nucleons <em>Rivista Del Nuovo Cimento</em>. 31: 1-73</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Fermi E, Metropolis N, Alei EF. (<b>1954</b>) Phase shift analysis of the scattering of negative pions by hydrogen <em>Physical Review</em>. 95: 1581-1585</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Fermi E, Glicksman M, Martin R, et al. (<b>1953</b>) Scattering of negative pions by hydrogen <em>Physical Review</em>. 92: 161-163</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Fermi E. (<b>1953</b>) Nucleon polarization in pion proton scattering <em>Physical Review</em>. 91: 947-948</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Anderson HL, Fermi E, Martin R, et al. (<b>1953</b>) Angular distribution of pions scattered by hydrogen <em>Physical Review</em>. 91: 155-168</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Anderson HL, Fermi E. (<b>1952</b>) Scattering and capture of pions by hydrogen [8] <em>Physical Review</em>. 86: 794</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Anderson HL, Fermi E, Nagle DE, et al. (<b>1952</b>) Angular distribution of pions scattered by hydrogen [7] <em>Physical Review</em>. 86: 793-794</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Anderson HL, Fermi E, Nagle DE, et al. (<b>1952</b>) Deuterium total cross sections for positive and negative pions [1] <em>Physical Review</em>. 86: 413</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Anderson HL, Fermi E, Long EA, et al. (<b>1952</b>) Total cross sections of positive pions in hydrogen [26] <em>Physical Review</em>. 85: 936</td></tr><tr><td class="clickable-row" data-href="publications.php?pid=34756"  style="font-size: 12px;">Fermi E, Anderson HL, Lundby A, et al. (<b>1952</b>) Ordinary and exchange scattering of negative pions by hydrogen [25] <em>Physical Review</em>. 85: 935-936</td></tr>      				</table>
+      				<a href="publications.php?pid=34756">See more...</a>      			</div>
+      		</div>
+      	</div>
+      	<div class="loading-clock"></div>
+      	      	  </div>
+  </div><!-- /main -->
+  </div> <!-- /wrapper -->
+
+
+  <footer>
+  <div class="footer-container">
+
+      <div class="footer-bottom">
+
+      Added by: nemenman (2010-07-28 20:34:10) - 
+
+Is someone missing from the tree? <a href="#" data-toggle="modal" data-target="#signIN">Register/sign in</a> to make changes.<br>
+<img src="https://neurotree.org/sess_align.php?w=PHPSESSID&x=c8l3738kq4vtervcopiotttj1k"/>Question? Ideas? Want to start a new tree? Contact <em>admin at neurotree.org</em>
+ - <a href="reporterror.php?pid=34756&refurl=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D34756">Report bug/error</a><br>&copy;2005-2026 The Academic Family Tree - <a href="faq.php#license">Data licensed for re-use with attribution to this site (CC-BY 3.0).</a>
+<span style="position: absolute; right: 0;">
+<iframe src="https://platform.twitter.com/widgets/tweet_button.html?size=s&url=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D34756text=Academic Family Tree&hashtags=academictree" width="60" height="25" size="small" scrolling="no" title="" style="border: 0; overflow: hidden;"></iframe>
+<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Facademictree.org%2Fphysics%2Fpeopleinfo.php%3Fpid%3D34756&layout=button&size=small&mobile_iframe=true&width=60&height=25&appId" width="60" height="25" style="border:none;overflow:hidden;" scrolling="no" frameborder="0" allowTransparency="true"></iframe>
+</span>
+</div>
+            </div>
+            </footer>
+    <script type="text/javascript" src="/ui/vendor/jquery.js"></script>
+    <script type="text/javascript" src="/ui/vendor/jquery-ui.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="/ui/vendor/jquery.ui.autocomplete.html.js" type="text/javascript"></script>
+    <script type="text/javascript" src="/ui/aComplete.js"></script>
+    <script type="text/javascript" src="/ui/vendor/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/ui/submital.js" type="text/javascript"></script>
+    <script>
+          /* added 2026-05-13: expose CSRF token for AJAX calls */
+          var csrfToken = "16d9efb987c18c1b95df2dda4dc04fc93432441f51fc52931a48cf68084ef4a3";
+          /* end added 2026-05-13 */
+          $( "#sign-in" ).click(function() {
+          $( ".login-container" ).toggle("fast");
+          });
+          $( "#sign-in2" ).click(function() {
+          $( ".login-container" ).toggle("fast");
+          });
+          $(document).ready(function() {  
+  //navigation toggle
+  var menuToggle = $("#menuToggle");
+  var menu = $("#navigation");
+  var menuItem = $("#navigation ul li");
+  
+  menuToggle.click(function() {
+    menu.toggleClass("active");
+  });
+  
+  menuItem.click(function() {
+    menu.removeClass("active");
+    menuItem.removeClass("current-page");
+    $(this).addClass("current-page");
+  });
+
+	h=$('.wrapper').height();
+	//console.log(h);
+	hwrap = h-78;
+	$('.wrapper').css('min-height',hwrap);
+
+
+// login js
+
+$('.sign-in-trig').click(function() {
+  $('#login-modal').addClass('selected');
+  $('#login-modal-container').css('display','block');
+  $('#login-button').css('display','inline-block');
+  $('#login-sign-up').removeClass('selected');
+  $('.response').html("");
+  $('#sign-up-modal-container').css('display','none');
+  $('#sign-up-button').css('display','none');
+});
+
+$('.sign-up-trig').click(function() {
+  $('#login-sign-up').addClass('selected');
+  $('#sign-up-modal-container').css('display','block');
+  $('#sign-up-button').css('display','inline-block');
+  $('#login-modal').removeClass('selected');
+  $('#login-modal-container').css('display','none');
+  $('.response').html("");
+  $('#login-button').css('display','none');
+});
+
+});
+
+  $(window).resize(function() {
+  
+	h=$('.wrapper').height();
+	console.log('wrapper' + h);
+	w=$(window).height();
+	console.log('widow' + w);
+	hwrap = w-84;
+	$('.wrapper').css('min-height',hwrap);
+});
+
+</script>
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1f2d5326a6054556bb10c6140b38074a","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-61671548-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-61671548-1');
+</script>
+<!--
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61671548-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+-->
+
+      	<script>
+
+
+
+      		jQuery(document).ready(function($) {
+      			$(".clickable-row").click(function() {
+      				window.document.location = $(this).data("href");
+      			});
+      			$('.clickable-row').hover(function() {
+      				$(this).css('cursor','pointer');
+      			});
+
+
+      			$('.alert').hide();
+      			$(".close").click(function() {
+      				$('.alert').hide();
+      			});
+
+      			$('.cancel').click(function() {
+      				$('.response').hide();
+      			});
+
+			$('.modal').on('hidden.bs.modal', function () {
+			$('.response').hide();
+})	
+
+      			$(document).keyup(function(e) {
+		     if (e.keyCode == 27) { // escape key maps to keycode `27`
+		     	$('.alert').hide();
+		     }
+		   });
+
+
+      		});
+      	</script>
+
+

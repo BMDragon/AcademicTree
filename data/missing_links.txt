@@ -1,7 +1,6 @@
 # Ancestors with no known advisor (modern era). Save their academictree page into
 # data/academictree_saved/ and rerun `python3 -m crawler.build`.
 Robert L. Walker                    great-grandparent            https://academictree.org/physics/peopleinfo.php?pid=128060
-Bruno Pontecorvo                    2× great-grandparent         https://academictree.org/physics/peopleinfo.php?pid=714884
 R.F. Bentley                        14× great-grandparent        (search academictree.org for this name)
 Isaac Ramos                         5× great-grandparent         (search academictree.org for this name)
 Veit Werler                         18× great-grandparent        (search academictree.org for this name)

@@ -35,6 +35,16 @@ def _clean(s):
 PID_RE = re.compile(r"peopleinfo\.php\?pid=(\d+)")
 
 
+DEGREES = re.compile(r"(,\s*(Ph\.?\s?D\.?|M\.?\s?D\.?|D\.?\s?Sc\.?|Sc\.?\s?D\.?|M\.?\s?Sc\.?|"
+                     r"M\.?\s?A\.?|B\.?\s?S\.?|M\.?\s?S\.?|Dr\.?)\s*)+$", re.I)
+
+
+def strip_degrees(name):
+    """'Enrico Fermi, Ph.D.' -> 'Enrico Fermi' (a trailing degree would
+    otherwise look like a 'Last, First' name)."""
+    return DEGREES.sub("", name or "").strip()
+
+
 def parse(txt, filename=""):
     pid = None
     for pat in (r'<link[^>]+canonical[^>]+pid=(\d+)', r'og:url[^>]+pid=(\d+)',
@@ -52,6 +62,7 @@ def parse(txt, filename=""):
     hm = re.search(r"<h1[^>]*>(.*?)</h1>", txt, re.S | re.I)
     if hm and _clean(hm.group(1)):
         name = _clean(hm.group(1))
+    name = strip_degrees(name)
 
     parents, children = [], []
     # Split on section headings that mention Parents / Children.
@@ -80,7 +91,7 @@ def parse(txt, filename=""):
             if not typ:
                 continue
             ym = re.search(r"\b(1[5-9]\d\d|20\d\d)\b", rest)
-            current.append({"pid": lm.group(1), "name": _clean(lm.group(2)), "type": typ,
+            current.append({"pid": lm.group(1), "name": strip_degrees(_clean(lm.group(2))), "type": typ,
                             "year": int(ym.group(1)) if ym else None, "text": rest[:200]})
     return {"pid": pid, "name": name, "parents": parents, "children": children}
 

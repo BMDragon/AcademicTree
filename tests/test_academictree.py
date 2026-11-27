@@ -16,6 +16,11 @@ PAGE = """<html><head><title>Kate Scholberg - Physics Tree</title>
 
 
 class Parse(unittest.TestCase):
+    def test_strip_degrees(self):
+        self.assertEqual(at.strip_degrees("Enrico Fermi, Ph.D."), "Enrico Fermi")
+        self.assertEqual(at.strip_degrees("Jane Roe, M.D., Ph.D."), "Jane Roe")
+        self.assertEqual(at.strip_degrees("Barish, Barry"), "Barish, Barry")
+
     def test_parse(self):
         r = at.parse(PAGE, "kate.html")
         self.assertEqual(r["pid"], "123")
