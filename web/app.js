@@ -297,6 +297,20 @@
   document.getElementById("home").onclick = () => {
     if (currentView === "all") frameFamily(3); else focusNode("me", 1);
   };
+  // Random person: zoom to someone in the current view, highlight their path
+  // to me and open their card (pinned, so it stays until you click away).
+  document.getElementById("random").onclick = () => {
+    const pool = [...visible].filter(id => id !== "me");
+    if (!pool.length) return;
+    const id = pool[Math.floor(Math.random() * pool.length)];
+    const n = byId.get(id);
+    focusNode(id, 1);
+    setTimeout(() => {
+      const r = nodeSel.filter(d => d.id === id).node().getBoundingClientRect();
+      pinned = true;
+      show(n, { clientX: r.right, clientY: r.top + r.height / 2 });
+    }, 650);
+  };
 
   // ---------- search --------------------------------------------------------
   const dl = document.getElementById("names");
@@ -414,7 +428,9 @@
     const na = n.named_after || [];
     h += chips("Named after them", na.map(x => x.wiki ? link(x.url, x.label) : `<span title="${esc(x.desc || "")}">${link(x.url, x.label)}</span>`),
       n.named_after_total > na.length ? `+${n.named_after_total - na.length} more on Wikidata` : "");
-    const deg = (n.degrees || []).map(d => `<li>${esc(d.degree)}, ${esc(d.school)}${d.year ? " " + d.year : ""}</li>`);
+    const deg = (n.degrees || [])
+      .map(d => [d.degree, d.school, d.year].filter(Boolean).map(esc).join(", "))
+      .filter(Boolean).map(t => `<li>${t}</li>`);
     if (deg.length && n.thesis) deg.push(`<li><i class="tex">${esc(n.thesis)}</i></li>`);
     h += list("Degrees", deg);
     const adv = (parents.get(n.id) || []).map(e => `<li>${esc(byId.get(e.source).name)} <span class="more">(${e.type})</span></li>`);
