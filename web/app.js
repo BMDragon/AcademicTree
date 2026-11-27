@@ -126,6 +126,9 @@
       edges: g.edges().map(d => [d.e.source, d.e.target, d.points.flatMap(p => [r(p.x), r(p.y)])]),
     };
   }
+  // hook for layout studies: lay out a view with a custom d3-dag layering
+  window.__layoutWith = (view, layeringOp) => layout("study", VIEWS[view].ids(), true, layeringOp);
+  window.__treeData = { data, byId, parents };
   // used by the build to export layouts (see crawler/layouts.py)
   window.__exportLayouts = () => ({
     generated: data.generated, font: FONT,
@@ -176,7 +179,7 @@
     };
   }
 
-  function layout(key, ids, fresh) {
+  function layout(key, ids, fresh, layeringOp) {
     if (!fresh && layouts.has(key)) return layouts.get(key);
     if (!fresh && PRE && PRE[key]) { const g = fromPrecomputed(PRE[key]); layouts.set(key, g); return g; }
     const D = window.d3;  // d3-dag merges into the d3 global
@@ -191,7 +194,7 @@
     const sugi = D.sugiyama()
       .nodeSize(nd => { const n = byId.get(nd.data); return [n._w, n._h]; })
       .gap([20, 46])
-      .layering(D.layeringSimplex())
+      .layering(layeringOp || D.layeringSimplex())
       .decross(siftingDecross(D))
       .coord(D.coordGreedy());
     const { width, height } = sugi(graph);
