@@ -9,8 +9,8 @@ joins mine.
 ## Use
 
 ```bash
-python3 -m crawler.build     # crawl + build web/data/graph.json (HTTP is cached in data/cache/)
-./serve.sh                   # http://localhost:8000 (forward port 8000 in VS Code)
+python3 -m crawler.build     # crawl + build web/data/*.json (HTTP + per-item caches in data/cache/)
+./serve.sh                   # http://localhost:8000 (forward port 8000 in VS Code); quiet, gzip
 python3 -m unittest discover tests
 ```
 
@@ -27,6 +27,12 @@ Wikidata "student of" links are ignored for people born before 1400
 religious transmission rather than academic advising.
 
 Edges: PhD solid · undergrad dotted · postdoc dashed · research/other dash-dot.
+
+Speed: the build writes `graph.json` (tree + relations) and `details.json`
+(card content, loaded after the first draw), and precomputes the page layout
+into `layout.json` with headless Chromium (Playwright; skipped with
+`--no-layout` or if unavailable, in which case the page computes it).
+`serve.sh` gzips responses (~8x smaller over an SSH port-forward).
 
 Layout: d3-dag Sugiyama layering plus a sifting pass (`siftingDecross` in
 `web/app.js`) that moves each person to the position in their row with the

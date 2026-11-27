@@ -16,7 +16,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from . import academictree_html, http, inspire, kinship, mgp, names, notables, stem, wikidata, wikipedia
+from . import academictree_html, http, inspire, kinship, layouts, mgp, names, notables, stem, wikidata, wikipedia
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TYPE_RANK = {"phd": 0, "postdoc": 1, "undergrad": 2, "research": 3}
@@ -464,6 +464,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-qb", action="store_true")
     ap.add_argument("--no-enrich", action="store_true")
+    ap.add_argument("--no-layout", action="store_true", help="skip precomputing the page layout")
     args = ap.parse_args()
     cfg = json.load(open(os.path.join(ROOT, "config.json")))
     http.set_rate_limits(cfg["rate_limit_seconds"])
@@ -525,7 +526,7 @@ def main():
     if dropped:
         log("dropped %d cycle edges" % len(dropped))
     find = cr.uf.find
-    notable_groups = {find("wd:" + q) for q in set(prizes) | qb_canon}
+    notable_groups = {find("wd:" + q) for q in set(prizes) | qb_canon}  # any of a person's items
     anc, keep = select(parents, notable_groups)
     log("ancestors: %d   kept nodes: %d" % (len(anc), len(keep)))
 
@@ -541,12 +542,19 @@ def main():
     for g in keep:
         refs = groups.get(g, {g})
         r = {"id": g, "name": best_name(refs, cr.info) if g != "me" else cfg["me"]["name"]}
-        for ref in refs:
+        # A person can carry several Wikidata items (Wikidata has duplicates,
+        # e.g. "Hugh David Politzer" and an author item "David Politzer").
+        # Pick the main one deterministically: prize winners and QB notables
+        # first, then the lowest QID (older items are the curated ones).
+        qids = sorted((x[3:] for x in refs if x.startswith("wd:")), key=lambda q: int(q[1:]))
+        if qids:
+            r["qid"] = sorted(qids, key=lambda q: (q not in prizes, q not in qb_ans, int(q[1:])))[0]
+        for ref in sorted(refs):
             if ":" not in ref:
                 continue
             kind, val = ref.split(":", 1)
             if kind == "wd":
-                r.setdefault("qid", val)
+                continue
             elif kind == "insp":
                 r.setdefault("inspire", val)
                 inf = cr.info.get(ref, {})
@@ -560,17 +568,20 @@ def main():
                     r.setdefault("thesis", inf.get("thesis"))
             elif kind == "at":
                 r.setdefault("academictree", val)
-        q = r.get("qid")
-        r["prizes"] = []
-        for pz in prizes.get(q, []) if q else []:
-            pc = cfg["prizes"][pz["prize"]]
-            r["prizes"].append({"key": pc["key"], "field": pc["field"], "label": pc["label"],
-                                "year": pz["year"]})
+        r["prizes"], seen_pz = [], set()
+        for q in qids:  # prizes / QB data from any of the person's items
+            for pz in prizes.get(q, []):
+                if (pz["prize"], pz["year"]) in seen_pz:
+                    continue
+                seen_pz.add((pz["prize"], pz["year"]))
+                pc = cfg["prizes"][pz["prize"]]
+                r["prizes"].append({"key": pc["key"], "field": pc["field"], "label": pc["label"],
+                                    "year": pz["year"]})
+            if q in qb_ans:
+                r["qb"] = max(r.get("qb", 0), qb_ans[q])
+            if q in qb_men:
+                r["qb_mentions"] = max(r.get("qb_mentions", 0), qb_men[q])
         r["prizes"].sort(key=lambda x: (x["year"] or 9999))
-        if q and q in qb_ans:
-            r["qb"] = qb_ans[q]
-        if q and q in qb_men:
-            r["qb_mentions"] = qb_men[q]
         r["ancestor"] = g in anc
         r["notable"] = g in notable_groups
         r["relation"] = rel_all.get(g)
@@ -614,10 +625,10 @@ def main():
                                    for k in ("nobel", "fields", "turing", "wolf")},
                      "quizbowl": sum(1 for r in recs.values() if r.get("qb_canon"))}}
     sanity(out)
-    path = os.path.join(ROOT, "web", "data", "graph.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
-    log("wrote %s  %s" % (os.path.relpath(path, ROOT), json.dumps(out["stats"])))
+    write_output(out)
+    log("wrote web/data/graph.json + details.json  %s" % json.dumps(out["stats"]))
+    if not args.no_layout:
+        layouts.precompute(log=log)
     log("http %s" % http.stats)
 
 
@@ -729,6 +740,32 @@ def report_missing(recs, sub, anc):
                 "# data/academictree_saved/ and rerun `python3 -m crawler.build`.\n")
         f.write("\n".join(lines) + "\n")
     log("missing-links report: %d people -> %s" % (len(lines), os.path.relpath(path, ROOT)))
+
+
+# Fields needed to lay out and label the tree; everything else is only shown
+# in hover cards and goes to details.json, which the page loads after the
+# first draw.
+CORE_FIELDS = {"id", "name", "birth", "death", "prizes", "qb", "qb_mentions", "qb_canon",
+               "ancestor", "notable", "relation", "relation_phd"}
+
+
+def write_output(out):
+    core, details = [], {}
+    for n in out["nodes"]:
+        c = {k: v for k, v in n.items() if k in CORE_FIELDS}
+        if not n.get("birth") and not n.get("death"):
+            yrs = [d.get("year") for d in n.get("degrees", []) if d.get("year")]
+            if yrs:
+                c["deg_year"] = yrs[0]
+        core.append(c)
+        rest = {k: v for k, v in n.items() if k not in CORE_FIELDS and k != "id"}
+        if rest:
+            details[n["id"]] = rest
+    d = os.path.join(ROOT, "web", "data")
+    with open(os.path.join(d, "graph.json"), "w", encoding="utf-8") as f:
+        json.dump(dict(out, nodes=core), f, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(d, "details.json"), "w", encoding="utf-8") as f:
+        json.dump({"generated": out["generated"], "details": details}, f, ensure_ascii=False, separators=(",", ":"))
 
 
 def sanity(out):

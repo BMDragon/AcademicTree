@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Academic Tree</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3-dag@1.1.0/bundle/d3-dag.iife.min.js"></script>
@@ -60,7 +63,7 @@
   </aside>
 
   <main id="stage">
-    <svg id="canvas"><g id="viewport"><g id="edges"></g><g id="nodes"></g></g></svg>
+    <svg id="canvas"><g id="viewport"><g id="edges"></g><g id="nodes"></g><rect id="dim"></rect><g id="hl"></g></g></svg>
     <div id="loading">Laying out the tree…</div>
   </main>
 

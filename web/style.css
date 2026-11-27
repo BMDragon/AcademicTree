@@ -37,7 +37,7 @@
 html, body { margin: 0; height: 100%; }
 body {
   background: var(--bg); color: var(--ink);
-  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font: 14px/1.4 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
 }
 a { color: var(--link); text-decoration: none; }
@@ -80,17 +80,22 @@ a:hover { text-decoration: underline; }
 .edge.undergrad { stroke-dasharray: 1.5 4; stroke-linecap: round; stroke-width: 1.8; }
 .edge.postdoc { stroke-dasharray: 8 4; }
 .edge.research { stroke-dasharray: 8 3 1.5 3; }
-#edges .edge.hl { stroke: var(--hl); stroke-width: 2.6; }
-#canvas.focus #edges .edge:not(.hl) { opacity: .25; }
-#canvas.focus .node:not(.hl) { opacity: .45; }
+/* hover highlight: a dimming sheet over the tree, highlighted copies on top */
+#dim { fill: var(--bg); opacity: 0; pointer-events: none; }
+#canvas.focus #dim { opacity: .6; }
+#hl { pointer-events: none; }
+#hl .edge { stroke: var(--hl); stroke-width: 2.6; }
+/* far zoom: names and icons are unreadable, skip drawing them */
+#canvas.far .node text, #canvas.far .node g { display: none; }
 
 .node rect { fill: var(--node); stroke: var(--node-stroke); stroke-width: 1; }
 .node.ancestor rect { fill: var(--anc); stroke: var(--anc-stroke); }
 .node.notable rect { stroke: var(--notable-stroke); stroke-width: 1.8; }
 .node.me rect { fill: var(--me); stroke: var(--me); }
 .node.me text { fill: #fff; font-weight: 700; }
-.node text { fill: var(--ink); font-size: 12px; dominant-baseline: central; pointer-events: none; }
+.node text { fill: var(--ink); font: 12px Inter, sans-serif; dominant-baseline: central; pointer-events: none; }
 .node .sub { fill: var(--muted); font-size: 10px; }
+.node.me text { font-weight: 700; }
 .node { cursor: pointer; }
 .node.hl rect { stroke: var(--hl); stroke-width: 2.4; }
 .node.pulse rect { animation: pulse 1.2s ease-out 3; }

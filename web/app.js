@@ -25,8 +25,12 @@
     `Wolf ${data.stats.laureates.wolf} · QB ${data.stats.quizbowl} · built ${data.generated}`;
 
   // ---------- measure + layout --------------------------------------------
+  // Measure with the bundled web font so box widths (and a layout precomputed
+  // on the server) are identical on every machine.
+  const FONT = "12px Inter";
+  try { await Promise.race([document.fonts.load(FONT), new Promise(r => setTimeout(r, 3000))]); } catch (e) { /* fall back */ }
   const measurer = document.createElement("canvas").getContext("2d");
-  measurer.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  measurer.font = FONT + ", sans-serif";
   function badges(n) {
     const b = n.prizes.map(p => ({ key: p.key, field: p.field, title: `${p.label}${p.year ? " " + p.year : ""}` }));
     if (n.qb_canon) b.push({ key: "qb", title: `Quizbowl canon: ${qbText(n)}` });
@@ -40,10 +44,7 @@
   }
   function years(n) {
     const b = (n.birth || "").slice(0, 4), d = (n.death || "").slice(0, 4);
-    if (!b && !d) {
-      const deg = (n.degrees || []).find(x => x.year);
-      return deg ? `PhD ${deg.year}` : "";
-    }
+    if (!b && !d) return n.deg_year ? `PhD ${n.deg_year}` : "";
     return `${b || "?"}–${d}`;
   }
   for (const n of data.nodes) {
@@ -87,6 +88,38 @@
     lineage: { label: "My ancestors only", ids: () => new Set(data.nodes.filter(n => n.ancestor || n.id === "me").map(n => n.id)) },
   };
   const layouts = new Map();
+  // Layouts precomputed at build time (crawler/build.py -> data/layout.json);
+  // used when they belong to this exact graph.json, else computed here.
+  let PRE = null;
+  if (!new URLSearchParams(location.search).has("nolayoutcache")) {
+    try {
+      const L = await fetch("data/layout.json").then(r => (r.ok ? r.json() : null));
+      if (L && L.generated === data.generated && L.font === FONT) PRE = L.views;
+    } catch (e) { /* no precomputed layout */ }
+  }
+  const edgeByKey = new Map(data.edges.map(e => [e.source + ">" + e.target, e]));
+  function fromPrecomputed(v) {
+    const pos = new Map(v.nodes.map(([id, x, y]) => { const n = byId.get(id); return [id, { x, y, width: n._w, height: n._h }]; }));
+    const eds = v.edges.map(([a, b, flat]) => {
+      const points = [];
+      for (let i = 0; i < flat.length; i += 2) points.push({ x: flat[i], y: flat[i + 1] });
+      return { e: edgeByKey.get(a + ">" + b), points };
+    }).filter(d => d.e);
+    return { graph: () => v.G, nodes: () => [...pos.keys()], node: id => pos.get(id), edges: () => eds, edge: d => d };
+  }
+  function serialise(g) {
+    const r = x => Math.round(x * 10) / 10;
+    return {
+      G: g.graph(),
+      nodes: g.nodes().map(id => [id, r(g.node(id).x), r(g.node(id).y)]),
+      edges: g.edges().map(d => [d.e.source, d.e.target, d.points.flatMap(p => [r(p.x), r(p.y)])]),
+    };
+  }
+  // used by the build to export layouts (see crawler/layouts.py)
+  window.__exportLayouts = () => ({
+    generated: data.generated, font: FONT,
+    views: Object.fromEntries(["all", "lineage"].map(k => [k, serialise(layout(k, VIEWS[k].ids(), true))])),
+  });
   // Sifting crossing minimisation (custom d3-dag "decross" operator).
   // Starts from median + greedy-switch two-layer sweeps, then repeatedly moves
   // each node (highest degree first) to the position in its layer that
@@ -132,8 +165,9 @@
     };
   }
 
-  function layout(key, ids) {
-    if (layouts.has(key)) return layouts.get(key);
+  function layout(key, ids, fresh) {
+    if (!fresh && layouts.has(key)) return layouts.get(key);
+    if (!fresh && PRE && PRE[key]) { const g = fromPrecomputed(PRE[key]); layouts.set(key, g); return g; }
     const D = window.d3;  // d3-dag merges into the d3 global
     const M = 40;         // margin
     const edgeOf = new Map();
@@ -203,7 +237,10 @@
   function draw(g) {
     G = g.graph();
     visible = new Set(g.nodes());
-    const eds = g.edges().map(ed => ({ e: g.edge(ed).e, pts: g.edge(ed).points }));
+    const eds = g.edges().map(ed => {
+      const pts = g.edge(ed).points, xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+      return { e: g.edge(ed).e, pts, bb: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] };
+    });
     edgeSel = d3.select("#edges").selectAll("path").data(eds, d => d.e.source + ">" + d.e.target)
       .join(enter => {
         const p = enter.append("path").attr("class", d => `edge ${d.e.type}`);
@@ -238,6 +275,8 @@
         return gN;
       })
       .attr("transform", n => { const p = g.node(n.id); n._x = p.x; n._y = p.y; return `translate(${p.x - n._w / 2},${p.y - n._h / 2})`; });
+    d3.select("#dim").attr("x", -5000).attr("y", -5000).attr("width", G.width + 10000).attr("height", G.height + 10000);
+    nodeSel.style("display", null); edgeSel.style("display", null);
   }
 
   const viewSel = document.getElementById("view");
@@ -268,7 +307,22 @@
   }
 
   // ---------- zoom ----------------------------------------------------------
-  const zoom = d3.zoom().scaleExtent([0.03, 3]).on("zoom", ev => vp.attr("transform", ev.transform));
+  let cullTimer = null;
+  const zoom = d3.zoom().scaleExtent([0.03, 3]).on("zoom", ev => {
+    vp.attr("transform", ev.transform);
+    svg.classed("far", ev.transform.k < 0.35);  // names unreadable below this: skip them
+    clearTimeout(cullTimer);
+    cullTimer = setTimeout(() => cull(ev.transform), 120);
+  });
+  // Hide people and lines more than a screen away from the visible area
+  // (re-evaluated whenever zooming/panning pauses).
+  function cull(t) {
+    const W = svg.node().clientWidth, H = svg.node().clientHeight;
+    const x0 = (-t.x) / t.k - W / t.k, x1 = (W - t.x) / t.k + W / t.k;
+    const y0 = (-t.y) / t.k - H / t.k, y1 = (H - t.y) / t.k + H / t.k;
+    nodeSel.style("display", n => (n._x + n._w / 2 < x0 || n._x - n._w / 2 > x1 || n._y < y0 || n._y > y1) ? "none" : null);
+    edgeSel.style("display", d => (d.bb[2] < x0 || d.bb[0] > x1 || d.bb[3] < y0 || d.bb[1] > y1) ? "none" : null);
+  }
   svg.call(zoom).on("dblclick.zoom", null);
   function fit(animate = true) {
     const W = svg.node().clientWidth, H = svg.node().clientHeight - 50;
@@ -360,14 +414,23 @@
         for (const e of path || []) { es.add(e); ns.add(e.source); ns.add(e.target); }
       }
     }
+    // Copy the highlighted lines and boxes onto a layer above a dimming sheet
+    // (restyling all ~5000 elements on every hover was the slow part).
+    const layer = document.getElementById("hl");
+    layer.replaceChildren();
+    edgeSel.each(function (d) { if (es.has(d.e)) layer.appendChild(this.cloneNode(true)); });
+    nodeSel.each(function (d) {
+      if (!ns.has(d.id)) return;
+      const c = this.cloneNode(true);
+      c.classList.add("hl"); c.style.display = null;
+      layer.appendChild(c);
+    });
+    for (const c of layer.querySelectorAll(".edge")) c.style.display = null;
     svg.classed("focus", true);
-    edgeSel.classed("hl", d => es.has(d.e));
-    nodeSel.classed("hl", d => ns.has(d.id));
   }
   function unhighlight() {
     svg.classed("focus", false);
-    edgeSel.classed("hl", false);
-    nodeSel.classed("hl", false);
+    document.getElementById("hl").replaceChildren();
   }
 
   // ---------- hover card ----------------------------------------------------
@@ -459,7 +522,9 @@
     if (y < 56) y = 56;
     card.style.left = x + "px"; card.style.top = y + "px";
   }
+  let shown = null, lastEv = null;
   function show(n, ev) {
+    shown = n; lastEv = ev;
     clearTimeout(hideTimer);
     card.innerHTML = cardHTML(n);
     // Thesis titles (Math Genealogy) carry inline LaTeX like $\mathbb{R}^3$.
@@ -492,4 +557,10 @@
   draw(layout("all", VIEWS.all.ids()));
   document.getElementById("loading").remove();
   frameFamily(3);
+  // Card details (photos, known for, named after, ...) arrive after the tree is drawn.
+  fetch("data/details.json").then(r => r.json()).then(D => {
+    if (D.generated !== data.generated) return;
+    for (const [id, extra] of Object.entries(D.details)) { const n = byId.get(id); if (n) Object.assign(n, extra); }
+    if (!card.hidden && shown) show(shown, lastEv);
+  }).catch(() => { /* cards show basic info only */ });
 })();
