@@ -211,10 +211,38 @@
     const mine = eds.filter(d => d.e.target === "me");
     if (mine.length) me.x = mine.reduce((s, d) => s + pos.get(d.e.source).x, 0) / mine.length;
     me.y = maxY + 90;
+    // Route my lines down row by row through the gaps between boxes (a
+    // straight drop from an advisor high up would cut through people below).
+    const rows = new Map();
+    for (const [id, p] of pos) {
+      if (id === "me") continue;
+      const k = Math.round(p.y);
+      if (!rows.has(k)) rows.set(k, []);
+      rows.get(k).push([p.x - p.width / 2, p.x + p.width / 2]);
+    }
+    for (const iv of rows.values()) iv.sort((u, v) => u[0] - v[0]);
+    const rowYs = [...rows.keys()].sort((u, v) => u - v);
+    const CLEAR = 8;  // keep the line this far from any box
+    function freeX(y, x) {
+      const iv = rows.get(y);
+      if (!iv.some(([l, r]) => x > l - CLEAR && x < r + CLEAR)) return x;
+      const opts = [iv[0][0] - CLEAR - 4, iv[iv.length - 1][1] + CLEAR + 4];
+      for (let i = 0; i + 1 < iv.length; i++) {
+        if (iv[i + 1][0] - iv[i][1] >= 2 * CLEAR) opts.push((iv[i][1] + iv[i + 1][0]) / 2);
+      }
+      return opts.reduce((b, o) => (Math.abs(o - x) < Math.abs(b - x) ? o : b));
+    }
     for (const d of mine) {
       const a = pos.get(d.e.source);
-      d.points = [{ x: a.x, y: a.y + a.height / 2 }, { x: a.x, y: maxY + 20 },
-                  { x: me.x, y: me.y - 60 }, { x: me.x, y: me.y - me.height / 2 }];
+      let x = a.x;
+      const pts = [{ x: a.x, y: a.y + a.height / 2 }];
+      for (const y of rowYs) {
+        if (y <= a.y) continue;
+        x = freeX(y, x);
+        pts.push({ x, y: y - HALF }, { x, y: y + HALF });
+      }
+      pts.push({ x: me.x, y: me.y - 60 }, { x: me.x, y: me.y - me.height / 2 });
+      d.points = pts;
     }
     const G = { width: width + 2 * M, height: Math.max(height + 2 * M, me.y + 60) };
     // dagre-like adapter consumed by draw()
