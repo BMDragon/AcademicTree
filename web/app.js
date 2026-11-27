@@ -374,7 +374,8 @@
   const card = document.getElementById("card");
   let hideTimer = null, pinned = false;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const link = (url, label) => `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label)}</a>`;
+  const link = (url, label, title) =>
+    `<a href="${esc(url)}" target="_blank" rel="noopener"${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</a>`;
   function fmtDate(s) {
     if (!s) return "";
     const d = s.slice(0, 10);
@@ -426,7 +427,7 @@
     const kf = (n.known_for || []).filter(k => !named.has(keyOf(k.label, k.url)) && !named.has(keyOf(k.label)));
     h += chips("Known for", kf.slice(0, 18).map(k => link(k.url, k.label)));
     const na = n.named_after || [];
-    h += chips("Named after them", na.map(x => x.wiki ? link(x.url, x.label) : `<span title="${esc(x.desc || "")}">${link(x.url, x.label)}</span>`),
+    h += chips("Named after them", na.map(x => link(x.url, x.label, x.desc)),
       n.named_after_total > na.length ? `+${n.named_after_total - na.length} more on Wikidata` : "");
     const deg = (n.degrees || [])
       .map(d => [d.degree, d.school, d.year].filter(Boolean).map(esc).join(", "))

@@ -3,6 +3,7 @@
 Uses the action API with many titles per request (page images and
 wikitext: 50) to stay far below Wikimedia's rate limits.
 """
+import html
 import re
 import urllib.parse
 
@@ -74,7 +75,8 @@ def parse_known_for(wikitext):
     out, seen = [], set()
     for m in re.finditer(r"\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]", field):
         target = m.group(1).strip()
-        label = re.sub(r"<[^>]+>", "", (m.group(2) or target)).strip()
+        target = html.unescape(target)
+        label = html.unescape(re.sub(r"<[^>]+>", "", (m.group(2) or target))).strip()
         if re.search(r"[{}=\"<>]|''", label) or not label:
             label = target
         if target.lower().startswith(("file:", "image:", "category:")) or label in seen:
@@ -86,7 +88,7 @@ def parse_known_for(wikitext):
 
 
 def known_for(titles):
-    return itemcache.batched("wp.knownfor.v2", titles, _known_for_fetch)
+    return itemcache.batched("wp.knownfor.v3", titles, _known_for_fetch)
 
 
 def _known_for_fetch(titles):
