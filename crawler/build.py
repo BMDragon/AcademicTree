@@ -737,10 +737,28 @@ def _topic_key(label, url=None):
 
 
 def dedupe_known_for(recs):
-    """Anything named after the person belongs under "named after them":
-    known-for items that are eponyms of the person ("Frobenius method") move
-    there, and anything already listed there is removed from "known for"."""
+    """Sort topics between "known for" and "named after them" by whether the
+    name visibly carries the person's surname:
+    - known-for items that do ("Frobenius method") move to named-after;
+    - named-after items that don't (Burnside's lemma, Rouché–Capelli theorem:
+      named after Frobenius only in some countries/sources) move to known-for;
+    - anything left in both is shown only under named-after."""
     for r in recs.values():
+        if r.get("named_after") and r.get("name"):
+            stay, out = [], []
+            for x in r["named_after"]:
+                (stay if names.is_eponym(x["label"], r.get("name", "")) else out).append(x)
+            if out:
+                have = set()
+                for k in r.get("known_for", []):
+                    have.update({_topic_key(k["label"], k.get("url")), _topic_key(k["label"])})
+                for x in out:
+                    keys = {_topic_key(x["label"], x.get("url")), _topic_key(x["label"])}
+                    if not keys & have:
+                        r.setdefault("known_for", []).append({"label": x["label"], "url": x["url"]})
+                        have |= keys
+                r["named_after"] = stay
+                r["named_after_total"] = max(0, r.get("named_after_total", len(stay) + len(out)) - len(out))
         if r.get("known_for"):
             keep, moved = [], []
             for k in r["known_for"]:

@@ -56,13 +56,29 @@ def surname(name):
 
 
 def is_eponym(label, person_name):
-    """True if `label` contains the person's surname as a capitalised word:
-    "Frobenius method", "Fermi's golden rule", "Bose–Einstein statistics",
-    "Schrödinger equation". Lower-case uses ("first-born") don't count."""
+    """True if `label` visibly carries the person's surname:
+    - a capitalised word equal to the surname or built on its stem
+      ("Frobenius method", "Fermi's golden rule", "Gaussian elimination",
+      "Boolean algebra", "Lagrangian"), or
+    - a lower-case derived word with a real suffix ("einsteinium", "curium",
+      "fermion"); a bare lower-case match ("first-born") doesn't count."""
     sn = surname(person_name)
     if not sn or len(sn) < 3:
         return False
-    for w in re.findall(r"[^\W\d_]+", label or ""):
-        if w[0].isupper() and _norm_word(w) == sn:
+    # stems for derived forms: Curie -> curi(um), Frobenius -> frobeni(oid)
+    stems = {sn}
+    for end in ("e", "us", "is"):
+        if sn.endswith(end) and len(sn) - len(end) >= 4:
+            stems.add(sn[:-len(end)])
+    stems = {st for st in stems if len(st) >= 4}
+    words = re.findall(r"[^\W\d_]+", label or "")
+    for w in words:
+        nw = _norm_word(w)
+        if w[0].isupper():
+            if nw == sn or any(nw.startswith(st) for st in stems):
+                return True
+        elif any(nw.startswith(st) and len(nw) - len(st) >= 2 for st in stems):
+            return True
+        elif nw == sn and len(words) == 1:  # units: "curie", "newton", "gauss"
             return True
     return False

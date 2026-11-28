@@ -6,6 +6,7 @@ from crawler import build
 class KnownForDedupe(unittest.TestCase):
     def test_named_after_wins(self):
         recs = {"x": {
+            "name": "Albert Einstein",
             "named_after": [{"label": "Einstein field equations",
                              "url": "https://en.wikipedia.org/wiki/Einstein_field_equations"},
                             {"label": "Bose–Einstein condensate",
@@ -35,6 +36,16 @@ class Eponyms(unittest.TestCase):
         self.assertTrue(names.is_eponym("Helmholtz free energy", "Hermann von Helmholtz"))
         self.assertFalse(names.is_eponym("Representation theory", "Ferdinand Georg Frobenius"))
         self.assertFalse(names.is_eponym("first-born children", "Max Born"))
+        self.assertTrue(names.is_eponym("einsteinium", "Albert Einstein"))
+        self.assertTrue(names.is_eponym("curium", "Marie Curie"))
+        self.assertTrue(names.is_eponym("fermion", "Enrico Fermi"))
+        self.assertTrue(names.is_eponym("Gaussian elimination", "Carl Friedrich Gauss"))
+        self.assertTrue(names.is_eponym("Boolean algebra", "George Boole"))
+        self.assertTrue(names.is_eponym("Frobenioid", "Ferdinand Georg Frobenius"))
+        self.assertTrue(names.is_eponym("curie", "Marie Curie"))
+        self.assertTrue(names.is_eponym("newton", "Isaac Newton"))
+        self.assertFalse(names.is_eponym("Burnside's lemma", "Ferdinand Georg Frobenius"))
+        self.assertFalse(names.is_eponym("Rouché–Capelli theorem", "Ferdinand Georg Frobenius"))
 
     def test_eponyms_move_to_named_after(self):
         recs = {"x": {"name": "Ferdinand Georg Frobenius",
@@ -44,6 +55,16 @@ class Eponyms(unittest.TestCase):
         build.dedupe_known_for(recs)
         self.assertEqual([k["label"] for k in recs["x"]["known_for"]], ["Group theory"])
         self.assertIn("Frobenius method", [x["label"] for x in recs["x"]["named_after"]])
+
+    def test_hidden_eponyms_move_to_known_for(self):
+        recs = {"x": {"name": "Ferdinand Georg Frobenius", "named_after_total": 2,
+                      "named_after": [{"label": "Burnside's lemma", "url": "https://en.wikipedia.org/wiki/Burnside%27s_lemma", "wiki": True},
+                                      {"label": "Frobenius norm", "url": "https://www.wikidata.org/wiki/Q1", "wiki": False}],
+                      "known_for": []}}
+        build.dedupe_known_for(recs)
+        self.assertEqual([x["label"] for x in recs["x"]["named_after"]], ["Frobenius norm"])
+        self.assertEqual([k["label"] for k in recs["x"]["known_for"]], ["Burnside's lemma"])
+        self.assertEqual(recs["x"]["named_after_total"], 1)
 
 
 class QuizbowlNames(unittest.TestCase):
