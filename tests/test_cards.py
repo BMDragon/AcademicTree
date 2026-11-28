@@ -44,6 +44,8 @@ class Eponyms(unittest.TestCase):
         self.assertTrue(names.is_eponym("Frobenioid", "Ferdinand Georg Frobenius"))
         self.assertTrue(names.is_eponym("curie", "Marie Curie"))
         self.assertTrue(names.is_eponym("newton", "Isaac Newton"))
+        self.assertTrue(names.is_eponym("Kelvin–Varley divider", "William Thomson, 1st Baron Kelvin"))
+        self.assertTrue(names.is_eponym("Thomson effect", "William Thomson, 1st Baron Kelvin"))
         self.assertFalse(names.is_eponym("Burnside's lemma", "Ferdinand Georg Frobenius"))
         self.assertFalse(names.is_eponym("Rouché–Capelli theorem", "Ferdinand Georg Frobenius"))
 

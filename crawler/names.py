@@ -55,6 +55,24 @@ def surname(name):
     return t[-1] if t else None
 
 
+TITLES = re.compile(r"\b(baron|baroness|lord|lady|earl|viscount|marquess|duke|count|sir)\b", re.I)
+
+
+def surnames(person_name):
+    """Surname(s) a topic may be named with: "William Thomson, 1st Baron
+    Kelvin" -> {"thomson", "kelvin"}; "Enrico Fermi" -> {"fermi"}."""
+    out = set()
+    parts = (person_name or "").split(",", 1)
+    main = surname(parts[0])
+    if main and len(main) >= 3:
+        out.add(main)
+    if len(parts) > 1 and TITLES.search(parts[1]):
+        t = [x for x in tokens(parts[1]) if x not in PARTICLES]
+        if t and len(t[-1]) >= 3:
+            out.add(t[-1])
+    return out
+
+
 def is_eponym(label, person_name):
     """True if `label` visibly carries the person's surname:
     - a capitalised word equal to the surname or built on its stem
@@ -62,23 +80,24 @@ def is_eponym(label, person_name):
       "Boolean algebra", "Lagrangian"), or
     - a lower-case derived word with a real suffix ("einsteinium", "curium",
       "fermion"); a bare lower-case match ("first-born") doesn't count."""
-    sn = surname(person_name)
-    if not sn or len(sn) < 3:
+    sns = surnames(person_name)
+    if not sns:
         return False
     # stems for derived forms: Curie -> curi(um), Frobenius -> frobeni(oid)
-    stems = {sn}
-    for end in ("e", "us", "is"):
-        if sn.endswith(end) and len(sn) - len(end) >= 4:
-            stems.add(sn[:-len(end)])
+    stems = set(sns)
+    for sn in sns:
+        for end in ("e", "us", "is"):
+            if sn.endswith(end) and len(sn) - len(end) >= 4:
+                stems.add(sn[:-len(end)])
     stems = {st for st in stems if len(st) >= 4}
     words = re.findall(r"[^\W\d_]+", label or "")
     for w in words:
         nw = _norm_word(w)
         if w[0].isupper():
-            if nw == sn or any(nw.startswith(st) for st in stems):
+            if nw in sns or any(nw.startswith(st) for st in stems):
                 return True
         elif any(nw.startswith(st) and len(nw) - len(st) >= 2 for st in stems):
             return True
-        elif nw == sn and len(words) == 1:  # units: "curie", "newton", "gauss"
+        elif nw in sns and len(words) == 1:  # units: "curie", "newton", "gauss"
             return True
     return False

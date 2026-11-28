@@ -779,6 +779,16 @@ def dedupe_known_for(recs):
             r["known_for"] = [k for k in r["known_for"]
                               if _topic_key(k["label"], k.get("url")) not in named
                               and _topic_key(k["label"]) not in named]
+        for key in ("known_for", "named_after"):  # one entry per topic
+            seen, uniq = set(), []
+            for k in r.get(key, []):
+                ks = {_topic_key(k["label"]), _topic_key(k["label"], k.get("url"))}
+                if ks & seen:
+                    continue
+                seen |= ks
+                uniq.append(k)
+            if key in r:
+                r[key] = uniq
 
 
 def report_missing(recs, sub, anc):
