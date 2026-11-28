@@ -25,6 +25,27 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class Eponyms(unittest.TestCase):
+    def test_is_eponym(self):
+        from crawler import names
+        self.assertTrue(names.is_eponym("Frobenius method", "Ferdinand Georg Frobenius"))
+        self.assertTrue(names.is_eponym("Frobenius–Schur indicator", "Ferdinand Georg Frobenius"))
+        self.assertTrue(names.is_eponym("Fermi's golden rule", "Enrico Fermi"))
+        self.assertTrue(names.is_eponym("Schrödinger equation", "Erwin Schrödinger"))
+        self.assertTrue(names.is_eponym("Helmholtz free energy", "Hermann von Helmholtz"))
+        self.assertFalse(names.is_eponym("Representation theory", "Ferdinand Georg Frobenius"))
+        self.assertFalse(names.is_eponym("first-born children", "Max Born"))
+
+    def test_eponyms_move_to_named_after(self):
+        recs = {"x": {"name": "Ferdinand Georg Frobenius",
+                      "named_after": [{"label": "Frobenius norm", "url": "https://www.wikidata.org/wiki/Q1", "wiki": False}],
+                      "known_for": [{"label": "Frobenius method", "url": "https://en.wikipedia.org/wiki/Frobenius_method"},
+                                    {"label": "Group theory", "url": "https://en.wikipedia.org/wiki/Group_theory"}]}}
+        build.dedupe_known_for(recs)
+        self.assertEqual([k["label"] for k in recs["x"]["known_for"]], ["Group theory"])
+        self.assertIn("Frobenius method", [x["label"] for x in recs["x"]["named_after"]])
+
+
 class QuizbowlNames(unittest.TestCase):
     def test_variants(self):
         from crawler import notables

@@ -737,8 +737,22 @@ def _topic_key(label, url=None):
 
 
 def dedupe_known_for(recs):
-    """Anything listed under "named after them" is removed from "known for"."""
+    """Anything named after the person belongs under "named after them":
+    known-for items that are eponyms of the person ("Frobenius method") move
+    there, and anything already listed there is removed from "known for"."""
     for r in recs.values():
+        if r.get("known_for"):
+            keep, moved = [], []
+            for k in r["known_for"]:
+                (moved if names.is_eponym(k["label"], r.get("name", "")) else keep).append(k)
+            if moved:
+                have = {_topic_key(x["label"], x.get("url")) for x in r.get("named_after", [])}
+                for k in moved:
+                    if _topic_key(k["label"], k.get("url")) not in have:
+                        r.setdefault("named_after", []).append(
+                            {"label": k["label"], "url": k["url"], "wiki": "/wiki/" in k["url"], "desc": None})
+                        r["named_after_total"] = r.get("named_after_total", 0) + 1
+                r["known_for"] = keep
         named = set()
         for x in r.get("named_after", []):
             named.add(_topic_key(x["label"], x.get("url")))

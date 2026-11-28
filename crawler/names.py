@@ -42,3 +42,27 @@ def same_person(a, b):
     if not ka[1] or not kb[1]:
         return True
     return ka[1] in given_initials(b) or kb[1] in given_initials(a)
+
+
+def _norm_word(w):
+    w = w.translate(_TRANS)
+    w = unicodedata.normalize("NFKD", w).encode("ascii", "ignore").decode()
+    return re.sub(r"([aou])e", r"\1", w.lower())
+
+
+def surname(name):
+    t = [x for x in tokens(name) if x not in PARTICLES]
+    return t[-1] if t else None
+
+
+def is_eponym(label, person_name):
+    """True if `label` contains the person's surname as a capitalised word:
+    "Frobenius method", "Fermi's golden rule", "Bose–Einstein statistics",
+    "Schrödinger equation". Lower-case uses ("first-born") don't count."""
+    sn = surname(person_name)
+    if not sn or len(sn) < 3:
+        return False
+    for w in re.findall(r"[^\W\d_]+", label or ""):
+        if w[0].isupper() and _norm_word(w) == sn:
+            return True
+    return False
